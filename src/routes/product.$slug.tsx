@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 import { ProductCard } from "@/components/site/ProductCard";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { CustomerReviews } from "@/components/site/ReviewForm";
 import {
   IMAGES,
   completeTheLook,
