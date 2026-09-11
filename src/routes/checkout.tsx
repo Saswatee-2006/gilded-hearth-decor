@@ -176,13 +176,15 @@ function CheckoutPage() {
           {step === 2 && (
             <>
               <RadioGroup value={payment} onValueChange={setPayment} className="space-y-3">
-                {[
-                  ["upi", "UPI — GPay, PhonePe, Paytm"],
-                  ["credit", "Credit Card"],
-                  ["debit", "Debit Card"],
-                  ["netbanking", "Net Banking"],
-                  ["cod", "Cash on Delivery"],
-                ].map(([id, label]) => (
+                {(
+                  [
+                    ["upi", "UPI — GPay, PhonePe, Paytm"],
+                    ["credit", "Credit Card"],
+                    ["debit", "Debit Card"],
+                    ["netbanking", "Net Banking"],
+                    ["cod", "Cash on Delivery"],
+                  ] as const
+                ).map(([id, label]) => (
                   <label key={id} className="flex cursor-pointer items-center gap-3 rounded-md border p-4 text-sm">
                     <RadioGroupItem value={id} id={id} />
                     {label}

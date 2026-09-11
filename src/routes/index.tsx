@@ -196,7 +196,7 @@ function Home() {
                 className="group relative block overflow-hidden rounded-md"
               >
                 <img
-                  src={IMAGES[CATEGORIES[(i * 3) % CATEGORIES.length].image]}
+                  src={IMAGES[CATEGORIES[(i * 3) % CATEGORIES.length]?.image ?? "canvas"]}
                   alt={`${s.name} décor`}
                   loading="lazy"
                   width={1024}
