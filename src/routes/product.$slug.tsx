@@ -108,7 +108,7 @@ function ProductPage() {
             onMouseLeave={() => setZoom(false)}
           >
             <img
-              src={IMAGES[product.gallery[active]]}
+              src={IMAGES[product.gallery[active] ?? product.image]}
               alt={`${product.name} — view ${active + 1}`}
               width={1024}
               height={1024}
