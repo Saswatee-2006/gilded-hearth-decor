@@ -30,6 +30,8 @@ const STEPS = ["Address", "Delivery", "Payment", "Confirmation"];
 
 function CheckoutPage() {
   const { cartProducts, subtotal, placeOrder } = useShop();
+  const { user } = useAuth();
+  const [saving, setSaving] = useState(false);
   const [step, setStep] = useState(0);
   const [order, setOrder] = useState<Order | null>(null);
   const [delivery, setDelivery] = useState("standard");
