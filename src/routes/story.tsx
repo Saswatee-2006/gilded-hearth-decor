@@ -1,22 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+;
 
 import { Block, PageShell } from "@/components/site/PageShell";
-
-export const Route = createFileRoute("/story")({
-  head: () => ({
-    meta: [
-      { title: "Our Story — Aarohan Décor, Made in India" },
-      {
-        name: "description",
-        content:
-          "Aarohan Décor works with Indian artisans in stone, brass, wood and glass to make décor worth living with.",
-      },
-      { property: "og:title", content: "Our Story — Aarohan Décor" },
-      { property: "og:description", content: "Made with Indian artisans, designed for real homes." },
-    ],
-  }),
-  component: StoryPage,
-});
 
 function StoryPage() {
   return (
@@ -47,3 +31,5 @@ function StoryPage() {
     </PageShell>
   );
 }
+
+export default StoryPage;

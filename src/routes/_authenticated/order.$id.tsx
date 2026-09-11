@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link, useParams } from "react-router-dom";
 import { CheckCircle2, Circle, Clock, Package, Truck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { formatINR } from "@/lib/catalog";
 import { cn } from "@/lib/utils";
-
-export const Route = createFileRoute("/_authenticated/order/$id")({
-  component: OrderDetailPage,
-});
 
 const TIMELINE_STEPS = [
   { id: "pending", label: "Order Placed", icon: Clock },
@@ -21,7 +17,7 @@ const TIMELINE_STEPS = [
 ];
 
 function OrderDetailPage() {
-  const { id } = Route.useParams();
+  const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
 
   const { data: order, isLoading } = useQuery({
@@ -198,3 +194,5 @@ function OrderDetailPage() {
     </div>
   );
 }
+
+export default OrderDetailPage;

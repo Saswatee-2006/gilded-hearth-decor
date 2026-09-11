@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { Facebook, Instagram, Youtube } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -9,29 +9,29 @@ const COLUMNS = [
   {
     title: "Shop",
     links: [
-      { label: "All Products", to: "/shop" as const },
-      { label: "New Arrivals", to: "/collection/$slug" as const, slug: "trending-now" },
-      { label: "Bestsellers", to: "/collection/$slug" as const, slug: "statement-pieces" },
-      { label: "Collections", to: "/collection/$slug" as const, slug: "luxury-decor" },
-      { label: "Gifts", to: "/collection/$slug" as const, slug: "gift-ideas" },
+      { label: "All Products", to: "/shop" },
+      { label: "New Arrivals", to: "/collection/trending-now" },
+      { label: "Bestsellers", to: "/collection/statement-pieces" },
+      { label: "Collections", to: "/collection/luxury-decor" },
+      { label: "Gifts", to: "/collection/gift-ideas" },
     ],
   },
   {
     title: "Help",
     links: [
-      { label: "Contact Us", to: "/contact" as const },
-      { label: "Shipping", to: "/shipping" as const },
-      { label: "Returns", to: "/returns" as const },
-      { label: "FAQs", to: "/faqs" as const },
-      { label: "Track Order", to: "/track-order" as const },
+      { label: "Contact Us", to: "/contact" },
+      { label: "Shipping", to: "/shipping" },
+      { label: "Returns", to: "/returns" },
+      { label: "FAQs", to: "/faqs" },
+      { label: "Track Order", to: "/track-order" },
     ],
   },
   {
     title: "About",
     links: [
-      { label: "Our Story", to: "/story" as const },
-      { label: "Journal", to: "/journal" as const },
-      { label: "Careers", to: "/careers" as const },
+      { label: "Our Story", to: "/story" },
+      { label: "Journal", to: "/journal" },
+      { label: "Careers", to: "/careers" },
     ],
   },
 ];
@@ -81,19 +81,9 @@ export function Footer() {
               <ul className="space-y-2.5">
                 {col.links.map((l) => (
                   <li key={col.title + l.label}>
-                    {"slug" in l && l.slug ? (
-                      <Link
-                        to={l.to}
-                        params={{ slug: l.slug }}
-                        className="link-underline text-sm text-muted-foreground"
-                      >
-                        {l.label}
-                      </Link>
-                    ) : (
-                      <Link to={l.to} className="link-underline text-sm text-muted-foreground">
-                        {l.label}
-                      </Link>
-                    )}
+                    <Link to={l.to} className="link-underline text-sm text-muted-foreground">
+                      {l.label}
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -104,18 +94,10 @@ export function Footer() {
         <div className="mt-14 flex flex-col gap-4 border-t pt-6 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between">
           <p>© {new Date().getFullYear()} Aarohan Décor. Handpicked in India.</p>
           <div className="flex flex-wrap gap-4">
-            <Link to="/policies" className="link-underline">
-              Privacy Policy
-            </Link>
-            <Link to="/policies" className="link-underline">
-              Terms &amp; Conditions
-            </Link>
-            <Link to="/policies" className="link-underline">
-              Refund Policy
-            </Link>
-            <Link to="/shipping" className="link-underline">
-              Shipping Policy
-            </Link>
+            <Link to="/policies" className="link-underline">Privacy Policy</Link>
+            <Link to="/policies" className="link-underline">Terms &amp; Conditions</Link>
+            <Link to="/policies" className="link-underline">Refund Policy</Link>
+            <Link to="/shipping" className="link-underline">Shipping Policy</Link>
           </div>
           <div className="flex gap-2">
             {["UPI", "VISA", "MC", "RuPay", "COD"].map((p) => (

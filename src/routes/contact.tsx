@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+;
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -7,22 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-
-export const Route = createFileRoute("/contact")({
-  head: () => ({
-    meta: [
-      { title: "Contact Aarohan Décor — Care Team & Studio" },
-      {
-        name: "description",
-        content:
-          "Talk to the Aarohan Décor care team about orders, deliveries, bulk gifting or interior styling advice.",
-      },
-      { property: "og:title", content: "Contact Aarohan Décor" },
-      { property: "og:description", content: "Reach our care team for orders, gifting and styling help." },
-    ],
-  }),
-  component: ContactPage,
-});
 
 function ContactPage() {
   const [form, setForm] = useState({ name: "", email: "", message: "" });
@@ -96,3 +80,5 @@ function ContactPage() {
     </PageShell>
   );
 }
+
+export default ContactPage;

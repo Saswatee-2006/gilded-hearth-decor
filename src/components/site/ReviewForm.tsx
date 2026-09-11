@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";;
 import { Star } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";

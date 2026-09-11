@@ -1,4 +1,4 @@
-import { Link, createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Check, Heart, Minus, Plus, Truck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -16,48 +16,8 @@ import {
 import { useShop } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/product/$slug")({
-  loader: ({ params }) => {
-    const product = getProduct(params.slug);
-    if (!product) throw notFound();
-    return { slug: product.slug, name: product.name, description: product.description };
-  },
-  head: ({ loaderData }) => {
-    if (!loaderData) {
-      return {
-        meta: [{ title: "Product unavailable — Aarohan Décor" }, { name: "robots", content: "noindex" }],
-      };
-    }
-    const title = `${loaderData.name} — Aarohan Décor`;
-    return {
-      meta: [
-        { title },
-        { name: "description", content: loaderData.description.slice(0, 155) },
-        { property: "og:title", content: title },
-        { property: "og:description", content: loaderData.description.slice(0, 155) },
-      ],
-    };
-  },
-  notFoundComponent: () => (
-    <div className="mx-auto max-w-3xl px-4 py-28 text-center">
-      <h1 className="font-display text-4xl">Product not found</h1>
-      <Link to="/shop" className="link-underline mt-4 inline-block text-sm text-accent">
-        Browse all décor
-      </Link>
-    </div>
-  ),
-  errorComponent: ({ error }) => (
-    <div className="mx-auto max-w-3xl px-4 py-28 text-center">
-      <h1 className="font-display text-3xl">We couldn't load this product</h1>
-      <p className="mt-3 text-sm text-muted-foreground">{error.message}</p>
-    </div>
-  ),
-  component: ProductPage,
-});
-
-
 function ProductPage() {
-  const { slug } = Route.useLoaderData();
+  const { slug } = useParams();
   const product = getProduct(slug)!;
   const { addToCart, toggleWishlist, isWishlisted, markViewed } = useShop();
   const { user } = useAuth();
@@ -90,7 +50,7 @@ function ProductPage() {
           Shop
         </Link>
         <span>/</span>
-        <Link to="/category/$slug" params={{ slug: product.category }} className="hover:text-foreground">
+        <Link to={`/category/${product.category }`} className="hover:text-foreground">
           {product.category.replace(/-/g, " ")}
         </Link>
         <span>/</span>
@@ -206,7 +166,7 @@ function ProductPage() {
                   return;
                 }
                 addToCart(product.id, qty, (product.category === 'posters' || product.category === 'wall-clocks' || product.category === 'wall-decor') ? size : undefined);
-                navigate({ to: "/checkout" });
+                navigate("/checkout");
               }}
             >
               Buy Now
@@ -268,3 +228,5 @@ function ProductPage() {
     </div>
   );
 }
+
+export default ProductPage;

@@ -1,4 +1,4 @@
-import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "react-router-dom";
 import { Check, Lock, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -13,19 +13,6 @@ import { saveOrder } from "@/lib/orders";
 import { FREE_SHIPPING_THRESHOLD, useShop, type Order } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/checkout")({
-  head: () => ({
-    meta: [
-      { title: "Secure Checkout — Aarohan Décor" },
-      { name: "description", content: "Address, delivery and payment in three quick steps. UPI, cards, net banking and COD." },
-      { property: "og:title", content: "Secure Checkout — Aarohan Décor" },
-      { property: "og:description", content: "UPI, cards, net banking and Cash on Delivery." },
-      { name: "robots", content: "noindex" },
-    ],
-  }),
-  component: CheckoutPage,
-});
-
 const STEPS = ["Address", "Delivery", "Payment", "Confirmation"];
 
 function CheckoutPage() {
@@ -35,7 +22,7 @@ function CheckoutPage() {
 
   useEffect(() => {
     if (user === null) {
-      navigate({ to: "/auth", search: { returnTo: "/checkout" } as any, replace: true });
+      navigate("/auth?returnTo=/checkout", { replace: true });
     }
   }, [user, navigate]);
 
@@ -294,3 +281,5 @@ function CheckoutPage() {
     </div>
   );
 }
+
+export default CheckoutPage;

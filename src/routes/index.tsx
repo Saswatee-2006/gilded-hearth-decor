@@ -1,4 +1,4 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { ArrowRight, Instagram, PackageCheck, RotateCcw, ShieldCheck, Sparkles, Truck } from "lucide-react";
 
 import { ProductCard } from "@/components/site/ProductCard";
@@ -7,25 +7,6 @@ import { Button } from "@/components/ui/button";
 import hero from "@/assets/hero-living.jpg";
 import banner from "@/assets/banner-statement.jpg";
 import { CATEGORIES, IMAGES, PRODUCTS, ROOMS, STYLES, productsInCollection } from "@/lib/catalog";
-
-export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Aarohan Décor — Make Your Space Beautiful" },
-      {
-        name: "description",
-        content:
-          "Premium Indian home décor: wall clocks, stone art, canvas prints, vases, mirrors, lighting and gifts. Free shipping above ₹999.",
-      },
-      { property: "og:title", content: "Aarohan Décor — Make Your Space Beautiful" },
-      {
-        property: "og:description",
-        content: "Thoughtfully designed décor that turns everyday spaces into something extraordinary.",
-      },
-    ],
-  }),
-  component: Home,
-});
 
 const featured = PRODUCTS.filter((p) => p.badges.includes("featured")).slice(0, 8);
 const bestsellers = PRODUCTS.filter((p) => p.badges.includes("bestseller")).slice(0, 4);
@@ -57,7 +38,7 @@ function SectionHead({
       {action && (
         <Button variant="link" className="px-0" asChild>
           {action.slug ? (
-            <Link to="/collection/$slug" params={{ slug: action.slug }}>
+            <Link to={`/collection/${action.slug }`}>
               {action.label} <ArrowRight className="ml-1 h-4 w-4" />
             </Link>
           ) : (
@@ -99,7 +80,7 @@ function Home() {
                   <Link to="/shop">Shop Décor</Link>
                 </Button>
                 <Button size="lg" variant="heroOutline" asChild>
-                  <Link to="/collection/$slug" params={{ slug: "luxury-decor" }}>
+                  <Link to={`/collection/${"luxury-decor" }`}>
                     Explore Collections
                   </Link>
                 </Button>
@@ -139,8 +120,7 @@ function Home() {
           {CATEGORIES.slice(0, 12).map((c, i) => (
             <Reveal key={c.slug} delay={i * 40}>
               <Link
-                to="/category/$slug"
-                params={{ slug: c.slug }}
+                to={`/category/${c.slug }`}
                 className="group block overflow-hidden rounded-md bg-secondary"
               >
                 <div className="relative">
@@ -257,8 +237,7 @@ function Home() {
           {wallArt.map((p) => (
             <Link
               key={p.id}
-              to="/product/$slug"
-              params={{ slug: p.slug }}
+              to={`/product/${p.slug }`}
               className="group block break-inside-avoid overflow-hidden rounded-md"
             >
               <img
@@ -313,7 +292,7 @@ function Home() {
               Statement pieces that bring personality to your space.
             </p>
             <Button size="lg" className="mt-7" asChild>
-              <Link to="/collection/$slug" params={{ slug: "statement-pieces" }}>
+              <Link to={`/collection/${"statement-pieces" }`}>
                 Explore the Collection
               </Link>
             </Button>
@@ -383,3 +362,5 @@ function Home() {
     </>
   );
 }
+
+export default SectionHead;

@@ -1,50 +1,23 @@
-import { Link, createFileRoute, notFound } from "@tanstack/react-router";
+import { Link, useParams } from "react-router-dom";
 
 import { ProductCard } from "@/components/site/ProductCard";
 import { COLLECTIONS, productsInCollection } from "@/lib/catalog";
 
-export const Route = createFileRoute("/collection/$slug")({
-  loader: ({ params }) => {
-    const collection = COLLECTIONS.find((c) => c.slug === params.slug);
-    if (!collection) throw notFound();
-    return collection;
-  },
-  head: ({ loaderData }) => {
-    if (!loaderData) {
-      return {
-        meta: [{ title: "Collection unavailable — Aarohan Décor" }, { name: "robots", content: "noindex" }],
-      };
-    }
-    const title = `${loaderData.title} — Aarohan Décor`;
-    return {
-      meta: [
-        { title },
-        { name: "description", content: loaderData.blurb },
-        { property: "og:title", content: title },
-        { property: "og:description", content: loaderData.blurb },
-      ],
-    };
-  },
-  notFoundComponent: () => (
-    <div className="mx-auto max-w-3xl px-4 py-28 text-center">
-      <h1 className="font-display text-4xl">Collection not found</h1>
-      <Link to="/shop" className="link-underline mt-4 inline-block text-sm text-accent">
-        Browse all décor
-      </Link>
-    </div>
-  ),
-  errorComponent: ({ error }) => (
-    <div className="mx-auto max-w-3xl px-4 py-28 text-center">
-      <h1 className="font-display text-3xl">We couldn't load this collection</h1>
-      <p className="mt-3 text-sm text-muted-foreground">{error.message}</p>
-    </div>
-  ),
-  component: CollectionPage,
-});
-
 function CollectionPage() {
-  const { slug, title, blurb } = Route.useLoaderData();
+  const { slug } = useParams<{ slug: string }>();
+  const collection = COLLECTIONS.find((c) => c.slug === slug);
   const products = productsInCollection(slug);
+
+  if (!collection) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-28 text-center">
+        <h1 className="font-display text-4xl">Collection not found</h1>
+        <Link to="/shop" className="link-underline mt-4 inline-block text-sm text-accent">
+          Browse all décor
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-14 md:px-8">
@@ -53,19 +26,18 @@ function CollectionPage() {
           Home
         </Link>
         <span>/</span>
-        <span className="text-foreground">{title}</span>
+        <span className="text-foreground">{collection.title}</span>
       </nav>
-      <h1 className="mt-4 font-display text-4xl md:text-6xl">{title}</h1>
+      <h1 className="mt-4 font-display text-4xl md:text-6xl">{collection.title}</h1>
       <p className="mt-3 max-w-xl text-sm text-muted-foreground">
-        {blurb} · {products.length} pieces
+        {collection.blurb} · {products.length} pieces
       </p>
 
       <div className="mt-6 flex flex-wrap gap-2">
         {COLLECTIONS.filter((c) => c.slug !== slug).map((c) => (
           <Link
             key={c.slug}
-            to="/collection/$slug"
-            params={{ slug: c.slug }}
+            to={`/collection/${c.slug}`}
             className="rounded-full border px-4 py-1.5 text-xs text-muted-foreground transition-colors hover:border-accent hover:text-accent"
           >
             {c.title}
@@ -81,3 +53,5 @@ function CollectionPage() {
     </div>
   );
 }
+
+export default CollectionPage;

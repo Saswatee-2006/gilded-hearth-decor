@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "react-router-dom";
 import { Heart } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ export function ProductCard({ product, className }: { product: Product; classNam
   return (
     <article className={cn("group relative flex flex-col", className)}>
       <div className="relative overflow-hidden rounded-md bg-secondary">
-        <Link to="/product/$slug" params={{ slug: product.slug }} aria-label={product.name}>
+        <Link to={`/product/${product.slug }`} aria-label={product.name}>
           <img
             src={IMAGES[product.image]}
             alt={product.name}
@@ -58,7 +58,7 @@ export function ProductCard({ product, className }: { product: Product; classNam
         <div className="absolute inset-x-3 bottom-3 flex gap-2 opacity-0 translate-y-2 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
           <Button size="sm" className="flex-1" onClick={() => {
             if (!user) {
-              navigate({ to: "/auth", search: { returnTo: window.location.pathname } as any });
+              navigate(`/auth?returnTo=${encodeURIComponent(window.location.pathname)}`);
               return;
             }
             addToCart(product.id);
@@ -66,7 +66,7 @@ export function ProductCard({ product, className }: { product: Product; classNam
             Add to Cart
           </Button>
           <Button size="sm" variant="secondary" asChild>
-            <Link to="/product/$slug" params={{ slug: product.slug }}>
+            <Link to={`/product/${product.slug }`}>
               View
             </Link>
           </Button>
@@ -77,8 +77,7 @@ export function ProductCard({ product, className }: { product: Product; classNam
         <p className="eyebrow">{product.subcategory}</p>
         <h3 className="font-display text-lg leading-snug">
           <Link
-            to="/product/$slug"
-            params={{ slug: product.slug }}
+            to={`/product/${product.slug }`}
             className="link-underline"
           >
             {product.name}

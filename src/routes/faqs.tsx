@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+;
 
 import { PageShell } from "@/components/site/PageShell";
 import {
@@ -7,22 +7,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-
-export const Route = createFileRoute("/faqs")({
-  head: () => ({
-    meta: [
-      { title: "FAQs — Aarohan Décor Help Centre" },
-      {
-        name: "description",
-        content:
-          "Answers on payments, Cash on Delivery, delivery timelines, care instructions, gifting and bulk orders.",
-      },
-      { property: "og:title", content: "FAQs — Aarohan Décor" },
-      { property: "og:description", content: "Payments, delivery, care and gifting questions answered." },
-    ],
-  }),
-  component: FaqPage,
-});
 
 const FAQS = [
   {
@@ -65,3 +49,5 @@ function FaqPage() {
     </PageShell>
   );
 }
+
+export default FaqPage;

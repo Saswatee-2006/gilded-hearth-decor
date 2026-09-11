@@ -1,4 +1,4 @@
-import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { LayoutGrid, List, SlidersHorizontal, Star } from "lucide-react";
 
 import { ProductCard } from "@/components/site/ProductCard";
@@ -34,37 +34,6 @@ type ShopSearch = {
 };
 
 const str = (v: unknown) => (typeof v === "string" && v.length > 0 ? v : undefined);
-
-export const Route = createFileRoute("/shop")({
-  validateSearch: (search: Record<string, unknown>): ShopSearch => ({
-    q: str(search["q"]),
-    category: str(search["category"]),
-    style: str(search["style"]),
-    room: str(search["room"]),
-    material: str(search["material"]),
-    price: str(search["price"]),
-    rating: Number(search["rating"]) > 0 ? Number(search["rating"]) : undefined,
-    instock: search["instock"] === true || search["instock"] === "true" ? true : undefined,
-    sort: str(search["sort"]),
-    view: search["view"] === "list" ? "list" : undefined,
-  }),
-  head: () => ({
-    meta: [
-      { title: "Shop All Home Décor — Aarohan Décor" },
-      {
-        name: "description",
-        content:
-          "Filter 40+ premium décor pieces by category, style, room, material and price. Wall art, clocks, vases, mirrors and more.",
-      },
-      { property: "og:title", content: "Shop All Home Décor — Aarohan Décor" },
-      {
-        property: "og:description",
-        content: "Filter premium décor by category, style, room, material and price in Indian Rupees.",
-      },
-    ],
-  }),
-  component: ShopPage,
-});
 
 function applyFilters(s: ShopSearch): Product[] {
   let list = [...PRODUCTS];
@@ -105,13 +74,29 @@ function applyFilters(s: ShopSearch): Product[] {
 }
 
 function ShopPage() {
-  const search = Route.useSearch();
-  const navigate = useNavigate({ from: "/shop" });
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const search: ShopSearch = {
+    q: searchParams.get("q") || undefined,
+    category: searchParams.get("category") || undefined,
+    style: searchParams.get("style") || undefined,
+    room: searchParams.get("room") || undefined,
+    material: searchParams.get("material") || undefined,
+    price: searchParams.get("price") || undefined,
+    sort: searchParams.get("sort") || undefined,
+    view: (searchParams.get("view") as "grid" | "list") || undefined,
+  };
   const products = applyFilters(search);
   const view = search.view ?? "grid";
 
-  const set = (patch: Partial<ShopSearch>) =>
-    navigate({ search: (prev) => ({ ...prev, ...patch }) });
+  const set = (patch: Partial<ShopSearch>) => {
+    const next = new URLSearchParams(searchParams);
+    Object.entries(patch).forEach(([k, v]) => {
+      if (v == null || v === undefined) next.delete(k);
+      else next.set(k, String(v));
+    });
+    setSearchParams(next);
+  };
 
   const Filters = () => (
     <div className="space-y-8">
@@ -320,7 +305,7 @@ function ShopPage() {
             <ul className="space-y-6">
               {products.map((p) => (
                 <li key={p.id} className="flex gap-5 border-b pb-6">
-                  <Link to="/product/$slug" params={{ slug: p.slug }} className="shrink-0">
+                  <Link to={`/product/${p.slug }`} className="shrink-0">
                     <img
                       src={IMAGES[p.image]}
                       alt={p.name}
@@ -333,7 +318,7 @@ function ShopPage() {
                   <div className="min-w-0">
                     <p className="eyebrow">{p.subcategory}</p>
                     <h2 className="font-display text-xl">
-                      <Link to="/product/$slug" params={{ slug: p.slug }} className="link-underline">
+                      <Link to={`/product/${p.slug }`} className="link-underline">
                         {p.name}
                       </Link>
                     </h2>
@@ -357,3 +342,5 @@ function ShopPage() {
     </div>
   );
 }
+
+export default ShopPage;

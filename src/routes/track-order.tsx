@@ -1,28 +1,12 @@
-import { useMutation } from "@tanstack/react-query";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { useState } from "react";
 
-import { Block, PageShell } from "@/components/site/PageShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { formatINR } from "@/lib/catalog";
-
-export const Route = createFileRoute("/track-order")({
-  head: () => ({
-    meta: [
-      { title: "Track Your Order — Aarohan Décor" },
-      {
-        name: "description",
-        content: "Enter your Aarohan Décor order number to see its current status and delivery stage.",
-      },
-      { property: "og:title", content: "Track Your Order — Aarohan Décor" },
-      { property: "og:description", content: "Check the status of your décor order." },
-    ],
-  }),
-  component: TrackOrderPage,
-});
+import { useMutation } from "@tanstack/react-query";
 
 const STAGES = ["placed", "packed", "shipped", "delivered"];
 
@@ -42,13 +26,16 @@ function TrackOrderPage() {
   });
 
   return (
-    <PageShell
-      eyebrow="Track order"
-      title="Where's my order?"
-      intro="Enter the order number from your confirmation email. Signed-in customers can also see every order in their account."
-    >
+    <div className="mx-auto max-w-3xl px-4 py-16 md:px-8">
+      <p className="eyebrow">Track order</p>
+      <h1 className="mt-2 font-display text-4xl">Where's my order?</h1>
+      <p className="mt-3 text-sm text-muted-foreground max-w-xl">
+        Enter the order number from your confirmation email. Signed-in customers can also see every
+        order in their account.
+      </p>
+
       <form
-        className="flex flex-wrap items-end gap-3"
+        className="mt-10 flex flex-wrap items-end gap-3"
         onSubmit={(e) => {
           e.preventDefault();
           if (orderNumber.trim().length < 4) return;
@@ -74,7 +61,7 @@ function TrackOrderPage() {
       </form>
 
       {lookup.isSuccess && !lookup.data && (
-        <p>
+        <p className="mt-8 text-sm text-muted-foreground">
           We couldn't find that order number. Check your confirmation email, or{" "}
           <Link to="/contact" className="underline">
             contact our care team
@@ -84,24 +71,29 @@ function TrackOrderPage() {
       )}
 
       {lookup.data && (
-        <Block heading={`Order #${lookup.data.order_number}`}>
-          <p>
+        <div className="mt-10 rounded-md bg-card p-6 shadow-soft">
+          <h2 className="font-display text-2xl">Order #{lookup.data.order_number}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
             Placed {new Date(lookup.data.created_at).toLocaleDateString("en-IN")} ·{" "}
             {formatINR(lookup.data.total)}
           </p>
-          <ol className="mt-4 space-y-2">
+          <ol className="mt-6 space-y-2">
             {STAGES.map((s, i) => {
               const reached = STAGES.indexOf(lookup.data!.status) >= i;
               return (
-                <li key={s} className={reached ? "text-foreground" : ""}>
+                <li key={s} className={reached ? "text-foreground font-medium" : "text-muted-foreground"}>
                   {reached ? "●" : "○"} <span className="capitalize">{s}</span>
                 </li>
               );
             })}
           </ol>
-          {lookup.data.status === "cancelled" && <p className="mt-3">This order was cancelled.</p>}
-        </Block>
+          {lookup.data.status === "cancelled" && (
+            <p className="mt-3 text-sm text-destructive">This order was cancelled.</p>
+          )}
+        </div>
       )}
-    </PageShell>
+    </div>
   );
 }
+
+export default TrackOrderPage;

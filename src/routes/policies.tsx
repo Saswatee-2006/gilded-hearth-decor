@@ -1,22 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+;
 
 import { Block, PageShell } from "@/components/site/PageShell";
-
-export const Route = createFileRoute("/policies")({
-  head: () => ({
-    meta: [
-      { title: "Policies — Privacy, Terms & Refunds | Aarohan Décor" },
-      {
-        name: "description",
-        content:
-          "Aarohan Décor privacy policy, terms and conditions, refund policy and shipping policy in one place.",
-      },
-      { property: "og:title", content: "Policies — Aarohan Décor" },
-      { property: "og:description", content: "Privacy, terms, refunds and shipping policies." },
-    ],
-  }),
-  component: PoliciesPage,
-});
 
 function PoliciesPage() {
   return (
@@ -54,3 +38,5 @@ function PoliciesPage() {
     </PageShell>
   );
 }
+
+export default PoliciesPage;

@@ -1,22 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+;
 
 import { PageShell } from "@/components/site/PageShell";
-
-export const Route = createFileRoute("/journal")({
-  head: () => ({
-    meta: [
-      { title: "The Journal — Home Styling Notes | Aarohan Décor" },
-      {
-        name: "description",
-        content:
-          "Styling notes from our studio: layering wall décor, warm lighting, festive tablescapes and small-space ideas.",
-      },
-      { property: "og:title", content: "The Journal — Aarohan Décor" },
-      { property: "og:description", content: "Styling notes and décor ideas from our studio." },
-    ],
-  }),
-  component: JournalPage,
-});
 
 const POSTS = [
   {
@@ -64,3 +48,5 @@ function JournalPage() {
     </PageShell>
   );
 }
+
+export default JournalPage;

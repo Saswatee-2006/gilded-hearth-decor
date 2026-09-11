@@ -1,4 +1,4 @@
-import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -11,31 +11,10 @@ import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 
-type AuthSearch = {
-  returnTo?: string;
-};
-
-export const Route = createFileRoute("/auth")({
-  validateSearch: (search: Record<string, unknown>): AuthSearch => {
-    return {
-      returnTo: typeof search.returnTo === "string" ? search.returnTo : undefined,
-    };
-  },
-  head: () => ({
-    meta: [
-      { title: "Sign In or Create Account — Aarohan Décor" },
-      { name: "description", content: "Sign in to track orders, save addresses and keep your wishlist across devices." },
-      { property: "og:title", content: "Sign In — Aarohan Décor" },
-      { property: "og:description", content: "Track orders, save addresses and sync your wishlist." },
-      { name: "robots", content: "noindex" },
-    ],
-  }),
-  component: AuthPage,
-});
-
 function AuthPage() {
   const navigate = useNavigate();
-  const search = Route.useSearch();
+  const location = useLocation();
+  const search = Object.fromEntries(new URLSearchParams(location.search));
   const { user } = useAuth();
   
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -48,14 +27,13 @@ function AuthPage() {
 
   useEffect(() => {
     if (user) {
-      if (search.returnTo) {
-        // @ts-ignore
-        navigate({ to: search.returnTo, replace: true });
+      if (search['returnTo']) {
+        navigate(search['returnTo'], { replace: true });
       } else {
-        navigate({ to: "/account", replace: true });
+        navigate("/account", { replace: true });
       }
     }
-  }, [user, navigate, search.returnTo]);
+  }, [user, navigate, search['returnTo']]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -71,6 +49,7 @@ function AuthPage() {
               data: { full_name: form.name.trim() },
             },
           });
+
           if (error) throw error;
           if (!data.session) {
             setSent(true);
@@ -83,6 +62,7 @@ function AuthPage() {
             email: form.email.trim(),
             password: form.password,
           });
+
           if (error) throw error;
           toast.success("Welcome back");
         }
@@ -92,6 +72,7 @@ function AuthPage() {
           const { error } = await supabase.auth.signInWithOtp({
             phone: "+91" + form.phone.trim(),
           });
+
           if (error) {
             // Check if it's an unsupported provider error and gracefully mock it
             if (error.message.includes("sms provider is not configured") || error.status === 400) {
@@ -108,10 +89,10 @@ function AuthPage() {
           if (form.otp === "123456") {
             // Mock login for demo purposes since actual SMS provider might not be configured
             toast.success("OTP Verified! (Mocked)");
-            if (search.returnTo) {
-              navigate({ to: search.returnTo as any, replace: true });
+            if (search['returnTo']) {
+              navigate(search['returnTo'], { replace: true });
             } else {
-              navigate({ to: "/account", replace: true });
+              navigate("/account", { replace: true });
             }
           } else {
             const { error } = await supabase.auth.verifyOtp({
@@ -119,6 +100,7 @@ function AuthPage() {
               token: form.otp,
               type: 'sms'
             });
+
             if (error) throw error;
             toast.success("OTP Verified");
           }
@@ -141,6 +123,7 @@ function AuthPage() {
       const { error } = await supabase.auth.resetPasswordForEmail(form.email.trim(), {
         redirectTo: window.location.origin + "/reset-password",
       });
+
       if (error) throw error;
       toast.success("Password reset link sent to your email");
     } catch (err) {
@@ -155,6 +138,7 @@ function AuthPage() {
     const result = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin,
     });
+
     if (result.error) {
       setBusy(false);
       toast.error("Google sign-in failed. Please try again.");
@@ -342,3 +326,5 @@ function AuthPage() {
     </div>
   );
 }
+
+export default AuthPage;

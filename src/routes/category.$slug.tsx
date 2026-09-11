@@ -1,58 +1,31 @@
-import { Link, createFileRoute, notFound } from "@tanstack/react-router";
+import { Link, useParams } from "react-router-dom";
 
 import { ProductCard } from "@/components/site/ProductCard";
-import { CATEGORIES, IMAGES, PRODUCTS, getCategory } from "@/lib/catalog";
-
-export const Route = createFileRoute("/category/$slug")({
-  loader: ({ params }) => {
-    const category = getCategory(params.slug);
-    if (!category) throw notFound();
-    return { name: category.name, blurb: category.blurb, image: category.image, slug: category.slug };
-  },
-  head: ({ loaderData }) => {
-    if (!loaderData) {
-      return {
-        meta: [{ title: "Category unavailable — Aarohan Décor" }, { name: "robots", content: "noindex" }],
-      };
-    }
-    const title = `${loaderData.name} — Buy Premium ${loaderData.name} Online | Aarohan Décor`;
-    return {
-      meta: [
-        { title },
-        { name: "description", content: `${loaderData.blurb} Shop premium ${loaderData.name.toLowerCase()} with free delivery above ₹999.` },
-        { property: "og:title", content: title },
-        { property: "og:description", content: loaderData.blurb },
-      ],
-    };
-  },
-  notFoundComponent: () => (
-    <div className="mx-auto max-w-3xl px-4 py-28 text-center">
-      <h1 className="font-display text-4xl">Category not found</h1>
-      <Link to="/shop" className="link-underline mt-4 inline-block text-sm text-accent">
-        Browse all décor
-      </Link>
-    </div>
-  ),
-  errorComponent: ({ error }) => (
-    <div className="mx-auto max-w-3xl px-4 py-28 text-center">
-      <h1 className="font-display text-3xl">We couldn't load this category</h1>
-      <p className="mt-3 text-sm text-muted-foreground">{error.message}</p>
-    </div>
-  ),
-  component: CategoryPage,
-});
+import { CATEGORIES, IMAGES, PRODUCTS } from "@/lib/catalog";
 
 function CategoryPage() {
-  const { name, blurb, image, slug } = Route.useLoaderData();
+  const { slug } = useParams<{ slug: string }>();
+  const category = CATEGORIES.find((c) => c.slug === slug);
   const products = PRODUCTS.filter((p) => p.category === slug);
   const siblings = CATEGORIES.filter((c) => c.slug !== slug).slice(0, 6);
+
+  if (!category) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-28 text-center">
+        <h1 className="font-display text-4xl">Category not found</h1>
+        <Link to="/shop" className="link-underline mt-4 inline-block text-sm text-accent">
+          Browse all décor
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <>
       <section className="relative">
         <img
-          src={IMAGES[image]}
-          alt={name}
+          src={IMAGES[category.image]}
+          alt={category.name}
           width={1024}
           height={1024}
           className="h-[38vh] min-h-[260px] w-full object-cover"
@@ -65,11 +38,11 @@ function CategoryPage() {
               <span>/</span>
               <Link to="/shop">Shop</Link>
               <span>/</span>
-              <span className="text-primary-foreground">{name}</span>
+              <span className="text-primary-foreground">{category.name}</span>
             </nav>
-            <h1 className="mt-3 font-display text-4xl md:text-6xl">{name}</h1>
+            <h1 className="mt-3 font-display text-4xl md:text-6xl">{category.name}</h1>
             <p className="mt-2 text-sm text-primary-foreground/85">
-              {blurb} · {products.length} pieces
+              {category.blurb} · {products.length} pieces
             </p>
           </div>
         </div>
@@ -92,8 +65,7 @@ function CategoryPage() {
             {siblings.map((c) => (
               <Link
                 key={c.slug}
-                to="/category/$slug"
-                params={{ slug: c.slug }}
+                to={`/category/${c.slug}`}
                 className="rounded-full border px-4 py-1.5 text-xs text-muted-foreground transition-colors hover:border-accent hover:text-accent"
               >
                 {c.name}
@@ -105,3 +77,5 @@ function CategoryPage() {
     </>
   );
 }
+
+export default CategoryPage;

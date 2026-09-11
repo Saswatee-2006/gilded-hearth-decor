@@ -1,22 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+;
 
 import { Block, PageShell } from "@/components/site/PageShell";
-
-export const Route = createFileRoute("/shipping")({
-  head: () => ({
-    meta: [
-      { title: "Shipping & Delivery — Aarohan Décor" },
-      {
-        name: "description",
-        content:
-          "Free shipping above ₹1,999, express delivery options, fragile-safe packing and pan-India delivery timelines.",
-      },
-      { property: "og:title", content: "Shipping & Delivery — Aarohan Décor" },
-      { property: "og:description", content: "Pan-India delivery, fragile-safe packing and timelines." },
-    ],
-  }),
-  component: ShippingPage,
-});
 
 function ShippingPage() {
   return (
@@ -44,3 +28,5 @@ function ShippingPage() {
     </PageShell>
   );
 }
+
+export default ShippingPage;

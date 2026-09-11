@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "react-router-dom";
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -13,19 +13,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PRODUCTS, formatINR } from "@/lib/catalog";
 import { useShop } from "@/lib/shop-store";
-
-export const Route = createFileRoute("/_authenticated/account")({
-  head: () => ({
-    meta: [
-      { title: "My Account — Aarohan Décor" },
-      { name: "description", content: "Your orders, wishlist, addresses and profile details." },
-      { property: "og:title", content: "My Account — Aarohan Décor" },
-      { property: "og:description", content: "Your orders, wishlist and saved addresses." },
-      { name: "robots", content: "noindex" },
-    ],
-  }),
-  component: AccountPage,
-});
 
 const emptyAddress = {
   label: "Home",
@@ -61,8 +48,8 @@ function AccountPage() {
       if (error) throw error;
       return data;
     },
+    enabled: !!user,
   });
-
   const addressesQuery = useQuery({
     queryKey: ["my-addresses", user?.id],
     queryFn: async () => {
@@ -73,8 +60,8 @@ function AccountPage() {
       if (error) throw error;
       return data;
     },
+    enabled: !!user,
   });
-
   const profileQuery = useQuery({
     queryKey: ["my-profile", user?.id],
     queryFn: async () => {
@@ -82,8 +69,8 @@ function AccountPage() {
       if (error) throw error;
       return data;
     },
+    enabled: !!user,
   });
-
   const addAddress = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("addresses").insert({ ...draft, user_id: user!.id });
@@ -96,7 +83,6 @@ function AccountPage() {
     },
     onError: () => toast.error("Could not save that address"),
   });
-
   const deleteAddress = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("addresses").delete().eq("id", id);
@@ -107,7 +93,6 @@ function AccountPage() {
       queryClient.invalidateQueries({ queryKey: ["my-addresses"] });
     },
   });
-
   const saveProfile = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
@@ -125,7 +110,6 @@ function AccountPage() {
     },
     onError: () => toast.error("Could not update your profile"),
   });
-
   const profile = profileDraft ?? {
     full_name: profileQuery.data?.full_name ?? "",
     phone: profileQuery.data?.phone ?? "",
@@ -189,7 +173,7 @@ function AccountPage() {
             <ul className="space-y-5">
               {ordersQuery.data?.map((o) => (
                 <li key={o.id}>
-                  <Link to="/order/$id" params={{ id: o.id }} className="block rounded-md bg-card p-5 shadow-soft transition-transform hover:scale-[1.02]">
+                  <Link to={`/order/${o.id }`} className="block rounded-md bg-card p-5 shadow-soft transition-transform hover:scale-[1.02]">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-sm font-medium">Order #{o.order_number}</p>
                       <span className="rounded-sm bg-secondary px-2 py-1 text-xs capitalize">
@@ -358,3 +342,5 @@ function AccountPage() {
     </div>
   );
 }
+
+export default AccountPage;

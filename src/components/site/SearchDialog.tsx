@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import { useState } from "react";
 
@@ -25,7 +25,7 @@ export function SearchDialog({
           onSubmit={(e) => {
             e.preventDefault();
             onOpenChange(false);
-            navigate({ to: "/shop", search: { q: q || undefined } });
+            navigate(`/shop?q=${encodeURIComponent(q)}`);
           }}
           className="flex items-center gap-3 border-b px-4 py-3"
         >
@@ -47,8 +47,7 @@ export function SearchDialog({
           {results.map((p) => (
             <Link
               key={p.id}
-              to="/product/$slug"
-              params={{ slug: p.slug }}
+              to={`/product/${p.slug }`}
               onClick={() => onOpenChange(false)}
               className="flex items-center gap-3 rounded-md p-2 transition-colors hover:bg-secondary"
             >

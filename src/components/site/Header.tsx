@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "react-router-dom";
 import { Heart, Menu, Search, ShoppingBag, User } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -9,17 +9,6 @@ import { useAuth } from "@/lib/auth";
 import { NAV_GROUPS } from "@/lib/catalog";
 import { useShop } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
-
-const MAIN_LINKS = [
-  { label: "Home", to: "/" as const },
-  { label: "Wall Décor", to: "/category/$slug" as const, slug: "wall-decor" },
-  { label: "Art", to: "/category/$slug" as const, slug: "stone-art" },
-  { label: "Living", to: "/category/$slug" as const, slug: "showpieces" },
-  { label: "Bedroom", to: "/category/$slug" as const, slug: "candles" },
-  { label: "Lighting", to: "/category/$slug" as const, slug: "lighting" },
-  { label: "Accessories", to: "/category/$slug" as const, slug: "table-decor" },
-  { label: "Gifts", to: "/collection/$slug" as const, slug: "gift-ideas" },
-];
 
 export function Header() {
   const { cartCount, wishlist } = useShop();
@@ -66,8 +55,7 @@ export function Header() {
                     {g.items.map((it) => (
                       <li key={g.title + it.slug}>
                         <Link
-                          to={g.title === "Gifts" ? "/collection/$slug" : "/category/$slug"}
-                          params={{ slug: it.slug }}
+                          to={g.title === "Gifts" ? `/collection/${it.slug}` : `/category/${it.slug}`}
                           className="text-sm text-muted-foreground"
                         >
                           {it.name}
@@ -96,31 +84,15 @@ export function Header() {
           >
             Shop
           </button>
-          {MAIN_LINKS.map((l) =>
-            l.slug ? (
-              <Link
-                key={l.label}
-                to={l.to}
-                params={{ slug: l.slug }}
-                onMouseEnter={() => setShopOpen(false)}
-                className="link-underline text-sm"
-                activeProps={{ className: "text-accent" }}
-              >
-                {l.label}
-              </Link>
-            ) : (
-              <Link
-                key={l.label}
-                to="/"
-                onMouseEnter={() => setShopOpen(false)}
-                className="link-underline text-sm"
-                activeOptions={{ exact: true }}
-                activeProps={{ className: "text-accent" }}
-              >
-                {l.label}
-              </Link>
-            ),
-          )}
+          <Link to="/shop" onMouseEnter={() => setShopOpen(false)} className="link-underline text-sm">
+            All Products
+          </Link>
+          <Link to="/story" onMouseEnter={() => setShopOpen(false)} className="link-underline text-sm">
+            Our Story
+          </Link>
+          <Link to="/journal" onMouseEnter={() => setShopOpen(false)} className="link-underline text-sm">
+            Journal
+          </Link>
         </nav>
 
         <div className="ml-auto flex items-center gap-1">
@@ -178,8 +150,7 @@ export function Header() {
                 {g.items.map((it) => (
                   <li key={g.title + it.slug}>
                     <Link
-                      to={g.title === "Gifts" ? "/collection/$slug" : "/category/$slug"}
-                      params={{ slug: it.slug }}
+                      to={g.title === "Gifts" ? `/collection/${it.slug}` : `/category/${it.slug}`}
                       onClick={() => setShopOpen(false)}
                       className="link-underline text-sm text-muted-foreground hover:text-foreground"
                     >

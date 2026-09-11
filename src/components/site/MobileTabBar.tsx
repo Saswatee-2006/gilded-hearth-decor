@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "react-router-dom";
 import { Heart, Home, Search, ShoppingBag, Store } from "lucide-react";
 
 import { useShop } from "@/lib/shop-store";
@@ -12,8 +12,6 @@ export function MobileTabBar({ onSearch }: { onSearch: () => void }) {
         <li>
           <Link
             to="/"
-            activeOptions={{ exact: true }}
-            activeProps={{ className: "text-accent" }}
             className="flex flex-col items-center gap-1 py-2.5 text-[10px] text-muted-foreground"
           >
             <Home className="h-[18px] w-[18px]" />
@@ -23,7 +21,6 @@ export function MobileTabBar({ onSearch }: { onSearch: () => void }) {
         <li>
           <Link
             to="/shop"
-            activeProps={{ className: "text-accent" }}
             className="flex flex-col items-center gap-1 py-2.5 text-[10px] text-muted-foreground"
           >
             <Store className="h-[18px] w-[18px]" />
@@ -43,7 +40,6 @@ export function MobileTabBar({ onSearch }: { onSearch: () => void }) {
         <li>
           <Link
             to="/wishlist"
-            activeProps={{ className: "text-accent" }}
             className="relative flex flex-col items-center gap-1 py-2.5 text-[10px] text-muted-foreground"
           >
             <Heart className="h-[18px] w-[18px]" />
@@ -56,7 +52,6 @@ export function MobileTabBar({ onSearch }: { onSearch: () => void }) {
         <li>
           <Link
             to="/cart"
-            activeProps={{ className: "text-accent" }}
             className="relative flex flex-col items-center gap-1 py-2.5 text-[10px] text-muted-foreground"
           >
             <ShoppingBag className="h-[18px] w-[18px]" />

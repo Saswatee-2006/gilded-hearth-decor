@@ -1,22 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+;
 
 import { Block, PageShell } from "@/components/site/PageShell";
-
-export const Route = createFileRoute("/returns")({
-  head: () => ({
-    meta: [
-      { title: "Returns & Refunds — Aarohan Décor" },
-      {
-        name: "description",
-        content:
-          "7-day easy returns, damage-in-transit replacements and refund timelines for Aarohan Décor orders.",
-      },
-      { property: "og:title", content: "Returns & Refunds — Aarohan Décor" },
-      { property: "og:description", content: "7-day easy returns and simple refunds." },
-    ],
-  }),
-  component: ReturnsPage,
-});
 
 function ReturnsPage() {
   return (
@@ -44,3 +28,5 @@ function ReturnsPage() {
     </PageShell>
   );
 }
+
+export default ReturnsPage;

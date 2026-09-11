@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -14,19 +14,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PRODUCTS, formatINR } from "@/lib/catalog";
-
-export const Route = createFileRoute("/_authenticated/admin")({
-  head: () => ({
-    meta: [
-      { title: "Store Admin — Aarohan Décor" },
-      { name: "description", content: "Manage orders, reviews and catalogue overview." },
-      { property: "og:title", content: "Store Admin — Aarohan Décor" },
-      { property: "og:description", content: "Orders, reviews and catalogue overview." },
-      { name: "robots", content: "noindex" },
-    ],
-  }),
-  component: AdminPage,
-});
 
 const STATUSES = ["placed", "packed", "shipped", "delivered", "cancelled"] as const;
 
@@ -139,7 +126,7 @@ function AdminPage() {
                       </p>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {new Date(o.created_at).toLocaleString("en-IN")} ·{" "}
-                        {o.payment_method.toUpperCase()} · {o.delivery_method}
+                        {o.payment_method.toUpperCase()}
                       </p>
                     </div>
                     <Select
@@ -159,7 +146,7 @@ function AdminPage() {
                     </Select>
                   </div>
                   <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
-                    {o.order_items.map((item) => (
+                    {o.order_items.map((item: any) => (
                       <li key={item.id}>
                         {item.name} × {item.qty}
                       </li>
@@ -176,7 +163,7 @@ function AdminPage() {
             <p className="text-sm text-muted-foreground">No customer reviews yet.</p>
           ) : (
             <ul className="space-y-4">
-              {reviewsQuery.data?.map((r) => (
+              {reviewsQuery.data?.map((r: any) => (
                 <li key={r.id} className="rounded-md bg-card p-5 shadow-soft">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
@@ -219,3 +206,5 @@ function AdminPage() {
     </div>
   );
 }
+
+export default AdminPage;

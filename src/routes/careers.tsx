@@ -1,21 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+;
 
 import { Block, PageShell } from "@/components/site/PageShell";
-
-export const Route = createFileRoute("/careers")({
-  head: () => ({
-    meta: [
-      { title: "Careers — Work With Aarohan Décor" },
-      {
-        name: "description",
-        content: "Open roles in design, merchandising, customer care and studio operations at Aarohan Décor.",
-      },
-      { property: "og:title", content: "Careers — Aarohan Décor" },
-      { property: "og:description", content: "Join our small studio team in India." },
-    ],
-  }),
-  component: CareersPage,
-});
 
 const ROLES = [
   { title: "Product Designer (Home Décor)", place: "Jaipur · Full-time" },
@@ -47,3 +32,5 @@ function CareersPage() {
     </PageShell>
   );
 }
+
+export default CareersPage;

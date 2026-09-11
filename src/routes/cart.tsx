@@ -1,21 +1,9 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { Heart, Minus, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { IMAGES, formatINR } from "@/lib/catalog";
 import { FREE_SHIPPING_THRESHOLD, useShop } from "@/lib/shop-store";
-
-export const Route = createFileRoute("/cart")({
-  head: () => ({
-    meta: [
-      { title: "Your Bag — Aarohan Décor" },
-      { name: "description", content: "Review your décor selection and checkout securely in Indian Rupees." },
-      { property: "og:title", content: "Your Bag — Aarohan Décor" },
-      { property: "og:description", content: "Review your décor selection and checkout securely." },
-    ],
-  }),
-  component: CartPage,
-});
 
 function CartPage() {
   const { cartProducts, subtotal, setQty, removeFromCart, toggleWishlist } = useShop();
@@ -47,7 +35,7 @@ function CartPage() {
         <ul className="space-y-6">
           {cartProducts.map(({ product, qty, size }) => (
             <li key={product.id + (size || "")} className="flex gap-4 border-b pb-6">
-              <Link to="/product/$slug" params={{ slug: product.slug }} className="shrink-0">
+              <Link to={`/product/${product.slug }`} className="shrink-0">
                 <img
                   src={IMAGES[product.image]}
                   alt={product.name}
@@ -60,7 +48,7 @@ function CartPage() {
               <div className="min-w-0 flex-1">
                 <p className="eyebrow">{product.subcategory}</p>
                 <h2 className="font-display text-xl">
-                  <Link to="/product/$slug" params={{ slug: product.slug }} className="link-underline">
+                  <Link to={`/product/${product.slug }`} className="link-underline">
                     {product.name} {size ? `(${size})` : ""}
                   </Link>
                 </h2>
@@ -130,3 +118,5 @@ function CartPage() {
     </div>
   );
 }
+
+export default CartPage;

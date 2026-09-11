@@ -1,21 +1,9 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 
 import { ProductCard } from "@/components/site/ProductCard";
 import { Button } from "@/components/ui/button";
 import { PRODUCTS } from "@/lib/catalog";
 import { useShop } from "@/lib/shop-store";
-
-export const Route = createFileRoute("/wishlist")({
-  head: () => ({
-    meta: [
-      { title: "Wishlist — Aarohan Décor" },
-      { name: "description", content: "Your saved décor pieces, ready when you are." },
-      { property: "og:title", content: "Wishlist — Aarohan Décor" },
-      { property: "og:description", content: "Your saved décor pieces, ready when you are." },
-    ],
-  }),
-  component: WishlistPage,
-});
 
 function WishlistPage() {
   const { wishlist } = useShop();
@@ -46,3 +34,5 @@ function WishlistPage() {
     </div>
   );
 }
+
+export default WishlistPage;
