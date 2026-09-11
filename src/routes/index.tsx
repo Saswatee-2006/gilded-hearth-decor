@@ -83,7 +83,7 @@ function Home() {
           height={1088}
           className="h-[78vh] min-h-[520px] w-full object-cover"
         />
-        <div className="absolute inset-0 bg-ink/35" />
+        <div className="absolute inset-0 bg-gradient-to-r from-ink/85 via-ink/60 to-ink/25" />
         <div className="absolute inset-0 flex items-center">
           <div className="mx-auto w-full max-w-7xl px-4 md:px-8">
             <Reveal className="max-w-xl text-primary-foreground">
