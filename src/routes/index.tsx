@@ -95,10 +95,10 @@ function Home() {
                 Thoughtfully designed décor that turns everyday spaces into something extraordinary.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Button size="lg" asChild>
+                <Button size="lg" variant="hero" asChild>
                   <Link to="/shop">Shop Décor</Link>
                 </Button>
-                <Button size="lg" variant="secondary" asChild>
+                <Button size="lg" variant="heroOutline" asChild>
                   <Link to="/collection/$slug" params={{ slug: "luxury-decor" }}>
                     Explore Collections
                   </Link>
