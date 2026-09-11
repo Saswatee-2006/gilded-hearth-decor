@@ -188,28 +188,30 @@ function AccountPage() {
           ) : (
             <ul className="space-y-5">
               {ordersQuery.data?.map((o) => (
-                <li key={o.id} className="rounded-md bg-card p-5 shadow-soft">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-sm">Order #{o.order_number}</p>
-                    <span className="rounded-sm bg-secondary px-2 py-1 text-xs capitalize">
-                      {o.status}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {new Date(o.created_at).toLocaleDateString("en-IN", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })}{" "}
-                    · {formatINR(o.total)} · {o.payment_method.toUpperCase()}
-                  </p>
-                  <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
-                    {o.order_items.map((item) => (
-                      <li key={item.id}>
-                        {item.name} × {item.qty} — {formatINR(item.price * item.qty)}
-                      </li>
-                    ))}
-                  </ul>
+                <li key={o.id}>
+                  <Link to="/order/$id" params={{ id: o.id }} className="block rounded-md bg-card p-5 shadow-soft transition-transform hover:scale-[1.02]">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm font-medium">Order #{o.order_number}</p>
+                      <span className="rounded-sm bg-secondary px-2 py-1 text-xs capitalize">
+                        {o.status}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {new Date(o.created_at).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}{" "}
+                      · {formatINR(o.total)} · {o.payment_method.toUpperCase()}
+                    </p>
+                    <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
+                      {o.order_items.map((item) => (
+                        <li key={item.id}>
+                          {item.name} × {item.qty}
+                        </li>
+                      ))}
+                    </ul>
+                  </Link>
                 </li>
               ))}
             </ul>

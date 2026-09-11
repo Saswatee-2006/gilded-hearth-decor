@@ -1,6 +1,6 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Check, Lock, ShieldCheck } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,14 @@ const STEPS = ["Address", "Delivery", "Payment", "Confirmation"];
 function CheckoutPage() {
   const { cartProducts, subtotal, placeOrder } = useShop();
   const { user } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user === null) {
+      navigate({ to: "/auth", search: { returnTo: "/checkout" } as any, replace: true });
+    }
+  }, [user, navigate]);
+
   const [saving, setSaving] = useState(false);
   const [step, setStep] = useState(0);
   const [order, setOrder] = useState<Order | null>(null);

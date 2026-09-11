@@ -15,7 +15,6 @@ import {
   PRODUCTS,
   ROOMS,
   STYLES,
-  discountPct,
   formatINR,
   type Product,
 } from "@/lib/catalog";
@@ -46,7 +45,6 @@ export const Route = createFileRoute("/shop")({
     price: str(search["price"]),
     rating: Number(search["rating"]) > 0 ? Number(search["rating"]) : undefined,
     instock: search["instock"] === true || search["instock"] === "true" ? true : undefined,
-    discount: search["discount"] === true || search["discount"] === "true" ? true : undefined,
     sort: str(search["sort"]),
     view: search["view"] === "list" ? "list" : undefined,
   }),
@@ -89,7 +87,6 @@ function applyFilters(s: ShopSearch): Product[] {
   }
   if (s.rating) list = list.filter((p) => p.rating >= s.rating!);
   if (s.instock) list = list.filter((p) => p.stock > 0);
-  if (s.discount) list = list.filter((p) => discountPct(p) >= 25);
 
   switch (s.sort) {
     case "price-asc":
@@ -100,9 +97,6 @@ function applyFilters(s: ShopSearch): Product[] {
       break;
     case "rating":
       list.sort((a, b) => b.rating - a.rating);
-      break;
-    case "discount":
-      list.sort((a, b) => discountPct(b) - discountPct(a));
       break;
     default:
       list.sort((a, b) => b.reviews - a.reviews);
@@ -212,29 +206,12 @@ function ShopPage() {
       </div>
 
       <div className="space-y-3">
-        <p className="eyebrow">Rating &amp; more</p>
-        {[4.5, 4].map((r) => (
-          <label key={r} className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Checkbox
-              checked={search.rating === r}
-              onCheckedChange={(c) => set({ rating: c ? r : undefined })}
-            />
-            <Star className="h-3.5 w-3.5 fill-brass text-brass" /> {r} &amp; above
-          </label>
-        ))}
         <label className="flex items-center gap-2 text-sm text-muted-foreground">
           <Checkbox
             checked={!!search.instock}
             onCheckedChange={(c) => set({ instock: c ? true : undefined })}
           />
           In stock only
-        </label>
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Checkbox
-            checked={!!search.discount}
-            onCheckedChange={(c) => set({ discount: c ? true : undefined })}
-          />
-          25% off or more
         </label>
       </div>
 
@@ -283,8 +260,6 @@ function ShopPage() {
               <SelectItem value="popular">Most popular</SelectItem>
               <SelectItem value="price-asc">Price: low to high</SelectItem>
               <SelectItem value="price-desc">Price: high to low</SelectItem>
-              <SelectItem value="rating">Top rated</SelectItem>
-              <SelectItem value="discount">Biggest discount</SelectItem>
             </SelectContent>
           </Select>
           <div className="flex rounded-sm border">
@@ -364,9 +339,7 @@ function ShopPage() {
                     </h2>
                     <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{p.description}</p>
                     <p className="mt-2 text-sm">
-                      {formatINR(p.price)}{" "}
-                      <span className="text-muted-foreground line-through">{formatINR(p.mrp)}</span>{" "}
-                      <span className="text-accent">{discountPct(p)}% off</span>
+                      {formatINR(p.price)}
                     </p>
                   </div>
                 </li>

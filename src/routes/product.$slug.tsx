@@ -1,15 +1,14 @@
 import { Link, createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
-import { Check, Heart, Minus, Plus, Star, Truck } from "lucide-react";
+import { Check, Heart, Minus, Plus, Truck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { ProductCard } from "@/components/site/ProductCard";
 import { Button } from "@/components/ui/button";
-import { CustomerReviews } from "@/components/site/ReviewForm";
+import { useAuth } from "@/lib/auth";
 import {
   IMAGES,
   completeTheLook,
-  discountPct,
   formatINR,
   getProduct,
   relatedProducts,
@@ -56,30 +55,29 @@ export const Route = createFileRoute("/product/$slug")({
   component: ProductPage,
 });
 
-const RATING_BREAKDOWN = [
-  { stars: 5, pct: 72 },
-  { stars: 4, pct: 19 },
-  { stars: 3, pct: 6 },
-  { stars: 2, pct: 2 },
-  { stars: 1, pct: 1 },
-];
 
 function ProductPage() {
   const { slug } = Route.useLoaderData();
   const product = getProduct(slug)!;
   const { addToCart, toggleWishlist, isWishlisted, markViewed } = useShop();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const [active, setActive] = useState(0);
   const [qty, setQty] = useState(1);
+  const [size, setSize] = useState<string>(
+    product.category === 'posters' ? "A4" :
+    (product.category === 'wall-clocks' || product.category === 'wall-decor') ? "XL" : ""
+  );
   const [zoom, setZoom] = useState(false);
-  const off = discountPct(product);
   const emi = Math.round(product.price / 3);
 
   useEffect(() => {
     markViewed(product.id);
-    setActive(0);
     setQty(1);
-  }, [product.id, markViewed]);
+    setSize(
+      product.category === 'posters' ? "A4" :
+      (product.category === 'wall-clocks' || product.category === 'wall-decor') ? "XL" : ""
+    );
+  }, [product.id, markViewed, product.category]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 md:px-8">
@@ -108,8 +106,8 @@ function ProductPage() {
             onMouseLeave={() => setZoom(false)}
           >
             <img
-              src={IMAGES[product.gallery[active] ?? product.image]}
-              alt={`${product.name} — view ${active + 1}`}
+              src={IMAGES[product.image]}
+              alt={product.name}
               width={1024}
               height={1024}
               className={cn(
@@ -118,29 +116,6 @@ function ProductPage() {
               )}
             />
           </div>
-          <div className="mt-3 flex gap-3">
-            {product.gallery.map((g, i) => (
-              <button
-                key={g + String(i)}
-                type="button"
-                onClick={() => setActive(i)}
-                aria-label={`View image ${i + 1}`}
-                className={cn(
-                  "overflow-hidden rounded-sm border-2",
-                  i === active ? "border-accent" : "border-transparent",
-                )}
-              >
-                <img
-                  src={IMAGES[g]}
-                  alt={`${product.name} thumbnail ${i + 1}`}
-                  loading="lazy"
-                  width={1024}
-                  height={1024}
-                  className="h-20 w-20 object-cover"
-                />
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* Details */}
@@ -148,32 +123,8 @@ function ProductPage() {
           <p className="eyebrow">{product.subcategory}</p>
           <h1 className="mt-2 font-display text-3xl md:text-5xl">{product.name}</h1>
 
-          <div className="mt-3 flex items-center gap-2 text-sm">
-            <span className="flex items-center gap-1">
-              {[1, 2, 3, 4, 5].map((s) => (
-                <Star
-                  key={s}
-                  className={cn(
-                    "h-4 w-4",
-                    s <= Math.round(product.rating) ? "fill-brass text-brass" : "text-border",
-                  )}
-                />
-              ))}
-            </span>
-            <span>{product.rating.toFixed(1)}</span>
-            <span className="text-muted-foreground">· {product.reviews} reviews</span>
-          </div>
-
           <div className="mt-5 flex flex-wrap items-baseline gap-3">
             <span className="font-display text-4xl">{formatINR(product.price)}</span>
-            {off > 0 && (
-              <>
-                <span className="text-muted-foreground line-through">{formatINR(product.mrp)}</span>
-                <span className="rounded-sm bg-accent px-2 py-0.5 text-xs text-accent-foreground">
-                  {off}% off
-                </span>
-              </>
-            )}
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
             Inclusive of all taxes · or 3 interest-free EMIs of {formatINR(emi)}
@@ -181,18 +132,37 @@ function ProductPage() {
 
           <p className="mt-6 text-sm leading-relaxed text-muted-foreground">{product.description}</p>
 
+          {(product.category === 'posters' || product.category === 'wall-clocks' || product.category === 'wall-decor') && (
+            <div className="mt-6">
+              <span className="eyebrow block mb-2">Size</span>
+              <div className="flex gap-2">
+                {product.category === 'posters' ? (
+                  <>
+                    <Button variant={size === "A4" ? "default" : "outline"} onClick={() => setSize("A4")}>A4</Button>
+                    <Button variant={size === "A5" ? "default" : "outline"} onClick={() => setSize("A5")}>A5</Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant={size === "XL" ? "default" : "outline"} onClick={() => setSize("XL")}>XL</Button>
+                    <Button variant={size === "XXL" ? "default" : "outline"} onClick={() => setSize("XXL")}>XXL</Button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
           <dl className="mt-6 grid grid-cols-2 gap-y-3 text-sm">
             {[
               ["Material", product.material],
-              ["Dimensions", product.dimensions],
+              ["Dimensions", (product.category === 'posters' || product.category === 'wall-clocks' || product.category === 'wall-decor') ? undefined : product.dimensions],
               ["Weight", product.weight],
               ["Colour", product.color],
               ["Style", product.style],
               ["Care", product.care],
-            ].map(([k, v]) => (
-              <div key={k} className="pr-4">
+            ].filter(([, v]) => v).map(([k, v]) => (
+              <div key={k as string} className="pr-4">
                 <dt className="eyebrow">{k}</dt>
-                <dd className="mt-1 capitalize">{v}</dd>
+                <dd className="mt-1 capitalize">{v as string}</dd>
               </div>
             ))}
           </dl>
@@ -217,7 +187,13 @@ function ProductPage() {
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
-            <Button size="lg" onClick={() => addToCart(product.id, qty)} disabled={product.stock === 0}>
+            <Button size="lg" onClick={() => {
+              if (!user) {
+                navigate({ to: "/auth", search: { returnTo: window.location.pathname } as any });
+                return;
+              }
+              addToCart(product.id, qty, (product.category === 'posters' || product.category === 'wall-clocks' || product.category === 'wall-decor') ? size : undefined);
+            }} disabled={product.stock === 0}>
               Add to Cart
             </Button>
             <Button
@@ -225,7 +201,11 @@ function ProductPage() {
               variant="secondary"
               disabled={product.stock === 0}
               onClick={() => {
-                addToCart(product.id, qty);
+                if (!user) {
+                  navigate({ to: "/auth", search: { returnTo: window.location.pathname } as any });
+                  return;
+                }
+                addToCart(product.id, qty, (product.category === 'posters' || product.category === 'wall-clocks' || product.category === 'wall-decor') ? size : undefined);
                 navigate({ to: "/checkout" });
               }}
             >
@@ -265,89 +245,7 @@ function ProductPage() {
         </div>
       </div>
 
-      {/* Reviews */}
-      <section className="mt-24">
-        <h2 className="font-display text-3xl">Customer Reviews</h2>
-        <div className="mt-8 grid gap-10 lg:grid-cols-[300px_1fr]">
-          <div>
-            <p className="font-display text-5xl">{product.rating.toFixed(1)}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{product.reviews} verified reviews</p>
-            <ul className="mt-5 space-y-2">
-              {RATING_BREAKDOWN.map((r) => (
-                <li key={r.stars} className="flex items-center gap-3 text-xs">
-                  <span className="w-8">{r.stars} ★</span>
-                  <span className="h-1.5 flex-1 rounded-full bg-secondary">
-                    <span
-                      className="block h-full rounded-full bg-brass"
-                      style={{ width: `${r.pct}%` }}
-                    />
-                  </span>
-                  <span className="w-8 text-right text-muted-foreground">{r.pct}%</span>
-                </li>
-              ))}
-            </ul>
-          </div>
 
-          <div>
-            <ul className="space-y-6">
-              {[
-                {
-                  name: "Ananya R., Bengaluru",
-                  text: "Looks even better than the photos. The finish is genuinely premium and it arrived beautifully packed.",
-                  stars: 5,
-                },
-                {
-                  name: "Rahul M., Pune",
-                  text: "Bought this for our new home and it instantly lifted the whole wall. Delivery took three days.",
-                  stars: 5,
-                },
-                {
-                  name: "Sneha K., Kolkata",
-                  text: "Lovely piece, slightly smaller than I imagined — do check the dimensions before ordering.",
-                  stars: 4,
-                },
-              ].map((r) => (
-                <li key={r.name} className="border-b pb-5">
-                  <div className="flex items-center gap-2">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <Star
-                        key={s}
-                        className={cn("h-3.5 w-3.5", s <= r.stars ? "fill-brass text-brass" : "text-border")}
-                      />
-                    ))}
-                    <span className="text-sm">{r.name}</span>
-                  </div>
-                  <p className="mt-2 text-sm text-muted-foreground">{r.text}</p>
-                  <div className="mt-3 flex gap-2">
-                    {product.gallery.slice(0, 2).map((g, i) => (
-                      <img
-                        key={i}
-                        src={IMAGES[g]}
-                        alt="Customer photo"
-                        loading="lazy"
-                        width={1024}
-                        height={1024}
-                        className="h-16 w-16 rounded-sm object-cover"
-                      />
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => toast("Thanks — marked helpful")}
-                    className="mt-3 text-xs text-muted-foreground underline"
-                  >
-                    Helpful
-                  </button>
-                </li>
-              ))}
-            </ul>
-
-            <div className="mt-8">
-              <CustomerReviews productSlug={product.slug} />
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Recommendations */}
       <section className="mt-24">

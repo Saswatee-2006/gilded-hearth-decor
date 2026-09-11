@@ -3,13 +3,13 @@ import { toast } from "sonner";
 
 import { PRODUCTS, type Product } from "@/lib/catalog";
 
-export type CartLine = { id: string; qty: number };
+export type CartLine = { id: string; qty: number; size?: string };
 export type Order = {
   id: string;
   date: string;
   total: number;
   status: string;
-  lines: { name: string; qty: number; price: number }[];
+  lines: { name: string; qty: number; price: number; size?: string }[];
 };
 
 type ShopState = {
@@ -17,9 +17,9 @@ type ShopState = {
   wishlist: string[];
   orders: Order[];
   recentlyViewed: string[];
-  addToCart: (id: string, qty?: number) => void;
-  setQty: (id: string, qty: number) => void;
-  removeFromCart: (id: string) => void;
+  addToCart: (id: string, qty?: number, size?: string) => void;
+  setQty: (id: string, qty: number, size?: string) => void;
+  removeFromCart: (id: string, size?: string) => void;
   clearCart: () => void;
   toggleWishlist: (id: string) => void;
   isWishlisted: (id: string) => boolean;
@@ -27,7 +27,7 @@ type ShopState = {
   placeOrder: (total: number) => Order;
   cartCount: number;
   subtotal: number;
-  cartProducts: { product: Product; qty: number }[];
+  cartProducts: { product: Product; qty: number; size?: string }[];
 };
 
 const ShopContext = createContext<ShopState | null>(null);
@@ -71,27 +71,27 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
     window.localStorage.setItem(KEY, JSON.stringify(state));
   }, [state, hydrated]);
 
-  const addToCart = useCallback((id: string, qty = 1) => {
+  const addToCart = useCallback((id: string, qty = 1, size?: string) => {
     setState((s) => {
-      const existing = s.cart.find((l) => l.id === id);
+      const existing = s.cart.find((l) => l.id === id && l.size === size);
       const cart = existing
-        ? s.cart.map((l) => (l.id === id ? { ...l, qty: l.qty + qty } : l))
-        : [...s.cart, { id, qty }];
+        ? s.cart.map((l) => (l.id === id && l.size === size ? { ...l, qty: l.qty + qty } : l))
+        : [...s.cart, { id, qty, size }];
       return { ...s, cart };
     });
     const p = PRODUCTS.find((x) => x.id === id);
     toast.success(p ? `${p.name} added to bag` : "Added to bag");
   }, []);
 
-  const setQty = useCallback((id: string, qty: number) => {
+  const setQty = useCallback((id: string, qty: number, size?: string) => {
     setState((s) => ({
       ...s,
-      cart: qty <= 0 ? s.cart.filter((l) => l.id !== id) : s.cart.map((l) => (l.id === id ? { ...l, qty } : l)),
+      cart: qty <= 0 ? s.cart.filter((l) => !(l.id === id && l.size === size)) : s.cart.map((l) => (l.id === id && l.size === size ? { ...l, qty } : l)),
     }));
   }, []);
 
-  const removeFromCart = useCallback((id: string) => {
-    setState((s) => ({ ...s, cart: s.cart.filter((l) => l.id !== id) }));
+  const removeFromCart = useCallback((id: string, size?: string) => {
+    setState((s) => ({ ...s, cart: s.cart.filter((l) => !(l.id === id && l.size === size)) }));
     toast("Removed from bag");
   }, []);
 
@@ -118,7 +118,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
         status: "Confirmed",
         lines: state.cart.map((l) => {
           const p = PRODUCTS.find((x) => x.id === l.id);
-          return { name: p?.name ?? "Item", qty: l.qty, price: p?.price ?? 0 };
+          return { name: p?.name ?? "Item", qty: l.qty, price: p?.price ?? 0, size: l.size };
         }),
       };
       setState((s) => ({ ...s, orders: [order, ...s.orders], cart: [] }));
@@ -132,9 +132,9 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
       state.cart
         .map((l) => {
           const product = PRODUCTS.find((p) => p.id === l.id);
-          return product ? { product, qty: l.qty } : null;
+          return product ? { product, qty: l.qty, size: l.size } : null;
         })
-        .filter((x): x is { product: Product; qty: number } => x !== null),
+        .filter((x): x is { product: Product; qty: number; size?: string } => x !== null),
     [state.cart],
   );
 

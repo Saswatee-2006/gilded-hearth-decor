@@ -2,7 +2,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { Heart, Minus, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { IMAGES, discountPct, formatINR } from "@/lib/catalog";
+import { IMAGES, formatINR } from "@/lib/catalog";
 import { FREE_SHIPPING_THRESHOLD, useShop } from "@/lib/shop-store";
 
 export const Route = createFileRoute("/cart")({
@@ -19,8 +19,6 @@ export const Route = createFileRoute("/cart")({
 
 function CartPage() {
   const { cartProducts, subtotal, setQty, removeFromCart, toggleWishlist } = useShop();
-  const mrpTotal = cartProducts.reduce((s, l) => s + l.product.mrp * l.qty, 0);
-  const discount = mrpTotal - subtotal;
   const delivery = subtotal === 0 || subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 99;
   const total = subtotal + delivery;
   const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
@@ -47,8 +45,8 @@ function CartPage() {
 
       <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_360px]">
         <ul className="space-y-6">
-          {cartProducts.map(({ product, qty }) => (
-            <li key={product.id} className="flex gap-4 border-b pb-6">
+          {cartProducts.map(({ product, qty, size }) => (
+            <li key={product.id + (size || "")} className="flex gap-4 border-b pb-6">
               <Link to="/product/$slug" params={{ slug: product.slug }} className="shrink-0">
                 <img
                   src={IMAGES[product.image]}
@@ -63,29 +61,27 @@ function CartPage() {
                 <p className="eyebrow">{product.subcategory}</p>
                 <h2 className="font-display text-xl">
                   <Link to="/product/$slug" params={{ slug: product.slug }} className="link-underline">
-                    {product.name}
+                    {product.name} {size ? `(${size})` : ""}
                   </Link>
                 </h2>
                 <p className="mt-1 text-sm">
-                  {formatINR(product.price)}{" "}
-                  <span className="text-muted-foreground line-through">{formatINR(product.mrp)}</span>{" "}
-                  <span className="text-accent">{discountPct(product)}% off</span>
+                  {formatINR(product.price)}
                 </p>
 
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   <div className="flex items-center rounded-sm border">
-                    <Button variant="ghost" size="icon" aria-label="Decrease" onClick={() => setQty(product.id, qty - 1)}>
+                    <Button variant="ghost" size="icon" aria-label="Decrease" onClick={() => setQty(product.id, qty - 1, size)}>
                       <Minus className="h-4 w-4" />
                     </Button>
                     <span className="w-9 text-center text-sm">{qty}</span>
-                    <Button variant="ghost" size="icon" aria-label="Increase" onClick={() => setQty(product.id, qty + 1)}>
+                    <Button variant="ghost" size="icon" aria-label="Increase" onClick={() => setQty(product.id, qty + 1, size)}>
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => toggleWishlist(product.id)}>
                     <Heart className="mr-1.5 h-4 w-4" /> Wishlist
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => removeFromCart(product.id)}>
+                  <Button variant="ghost" size="sm" onClick={() => removeFromCart(product.id, size)}>
                     <Trash2 className="mr-1.5 h-4 w-4" /> Remove
                   </Button>
                 </div>
@@ -99,12 +95,8 @@ function CartPage() {
           <p className="eyebrow">Order summary</p>
           <dl className="mt-4 space-y-3 text-sm">
             <div className="flex justify-between">
-              <dt className="text-muted-foreground">Subtotal (MRP)</dt>
-              <dd>{formatINR(mrpTotal)}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-muted-foreground">Discount</dt>
-              <dd className="text-accent">− {formatINR(discount)}</dd>
+              <dt className="text-muted-foreground">Subtotal</dt>
+              <dd>{formatINR(subtotal)}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-muted-foreground">Delivery</dt>
