@@ -19,19 +19,19 @@ const COLUMNS = [
   {
     title: "Help",
     links: [
-      { label: "Contact Us", to: "/account" as const },
-      { label: "Shipping", to: "/account" as const },
-      { label: "Returns", to: "/account" as const },
-      { label: "FAQs", to: "/account" as const },
-      { label: "Track Order", to: "/account" as const },
+      { label: "Contact Us", to: "/contact" as const },
+      { label: "Shipping", to: "/shipping" as const },
+      { label: "Returns", to: "/returns" as const },
+      { label: "FAQs", to: "/faqs" as const },
+      { label: "Track Order", to: "/track-order" as const },
     ],
   },
   {
     title: "About",
     links: [
-      { label: "Our Story", to: "/" as const },
-      { label: "Journal", to: "/" as const },
-      { label: "Careers", to: "/" as const },
+      { label: "Our Story", to: "/story" as const },
+      { label: "Journal", to: "/journal" as const },
+      { label: "Careers", to: "/careers" as const },
     ],
   },
 ];
@@ -104,10 +104,18 @@ export function Footer() {
         <div className="mt-14 flex flex-col gap-4 border-t pt-6 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between">
           <p>© {new Date().getFullYear()} Aarohan Décor. Handpicked in India.</p>
           <div className="flex flex-wrap gap-4">
-            <span>Privacy Policy</span>
-            <span>Terms &amp; Conditions</span>
-            <span>Refund Policy</span>
-            <span>Shipping Policy</span>
+            <Link to="/policies" className="link-underline">
+              Privacy Policy
+            </Link>
+            <Link to="/policies" className="link-underline">
+              Terms &amp; Conditions
+            </Link>
+            <Link to="/policies" className="link-underline">
+              Refund Policy
+            </Link>
+            <Link to="/shipping" className="link-underline">
+              Shipping Policy
+            </Link>
           </div>
           <div className="flex gap-2">
             {["UPI", "VISA", "MC", "RuPay", "COD"].map((p) => (
