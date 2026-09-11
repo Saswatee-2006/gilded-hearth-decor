@@ -135,9 +135,17 @@ export function Header() {
               )}
             </Link>
           </Button>
-          <Button variant="ghost" size="icon" asChild aria-label="Account">
-            <Link to="/account">
+          <Button
+            variant="ghost"
+            size="icon"
+            asChild
+            aria-label={user ? "My account" : "Sign in"}
+          >
+            <Link to={user ? "/account" : "/auth"} className="relative">
               <User className="h-[18px] w-[18px]" />
+              {user && (
+                <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-accent" />
+              )}
             </Link>
           </Button>
           <Button variant="ghost" size="icon" asChild aria-label="Cart">
