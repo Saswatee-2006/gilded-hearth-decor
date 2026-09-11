@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useAuth } from "@/lib/auth";
 import { formatINR } from "@/lib/catalog";
+import { saveOrder } from "@/lib/orders";
 import { FREE_SHIPPING_THRESHOLD, useShop, type Order } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
 

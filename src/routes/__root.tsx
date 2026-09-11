@@ -14,6 +14,7 @@ import { Header } from "@/components/site/Header";
 import { MobileTabBar } from "@/components/site/MobileTabBar";
 import { SearchDialog } from "@/components/site/SearchDialog";
 import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "@/lib/auth";
 import { ShopProvider } from "@/lib/shop-store";
 
 import appCss from "../styles.css?url";
@@ -145,9 +146,11 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ShopProvider>
-        <SiteLayout />
-      </ShopProvider>
+      <AuthProvider>
+        <ShopProvider>
+          <SiteLayout />
+        </ShopProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
