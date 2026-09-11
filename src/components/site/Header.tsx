@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { SearchDialog } from "@/components/site/SearchDialog";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { useAuth } from "@/lib/auth";
 import { NAV_GROUPS } from "@/lib/catalog";
 import { useShop } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,7 @@ const MAIN_LINKS = [
 
 export function Header() {
   const { cartCount, wishlist } = useShop();
+  const { user } = useAuth();
   const [searchOpen, setSearchOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
