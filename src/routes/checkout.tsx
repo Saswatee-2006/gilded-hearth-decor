@@ -208,20 +208,41 @@ function CheckoutPage() {
               </Button>
             )}
             <Button
-              disabled={!canContinue}
-              onClick={() => {
+              disabled={!canContinue || saving}
+              onClick={async () => {
                 if (step === 0 && !canContinue) return;
                 if (step < 2) {
                   setStep((s) => s + 1);
                   return;
                 }
+                setSaving(true);
+                const lines = cartProducts.map(({ product, qty }) => ({ product, qty }));
                 const placed = placeOrder(total);
+                if (user) {
+                  try {
+                    await saveOrder({
+                      userId: user.id,
+                      orderNumber: placed.id,
+                      paymentMethod: payment,
+                      deliveryMethod: delivery,
+                      subtotal,
+                      discount: 0,
+                      shipping: shipping + express,
+                      total,
+                      address,
+                      lines,
+                    });
+                  } catch {
+                    toast.error("Order placed, but we couldn't save it to your account.");
+                  }
+                }
+                setSaving(false);
                 setOrder(placed);
                 setStep(3);
                 toast.success("Order placed — confirmation sent to your email");
               }}
             >
-              {step < 2 ? "Continue" : `Pay ${formatINR(total)}`}
+              {step < 2 ? "Continue" : saving ? "Placing order…" : `Pay ${formatINR(total)}`}
             </Button>
           </div>
           {step === 0 && !canContinue && (
