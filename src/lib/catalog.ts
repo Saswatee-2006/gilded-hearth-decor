@@ -804,8 +804,7 @@ const seeds: Seed[] = [
     subcategory: "Table Lamps",
     price: 2199,
     mrp: 3399,
-    rating 
-: 4.6,
+    rating: 4.6,
     reviews: 174,
     image: "lamp",
     style: "contemporary",
