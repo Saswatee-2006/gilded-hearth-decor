@@ -83,7 +83,7 @@ function Home() {
           height={1088}
           className="h-[78vh] min-h-[520px] w-full object-cover"
         />
-        <div className="absolute inset-0 bg-ink/35" />
+        <div className="absolute inset-0 bg-gradient-to-r from-ink/85 via-ink/60 to-ink/25" />
         <div className="absolute inset-0 flex items-center">
           <div className="mx-auto w-full max-w-7xl px-4 md:px-8">
             <Reveal className="max-w-xl text-primary-foreground">
@@ -95,10 +95,10 @@ function Home() {
                 Thoughtfully designed décor that turns everyday spaces into something extraordinary.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Button size="lg" asChild>
+                <Button size="lg" variant="hero" asChild>
                   <Link to="/shop">Shop Décor</Link>
                 </Button>
-                <Button size="lg" variant="secondary" asChild>
+                <Button size="lg" variant="heroOutline" asChild>
                   <Link to="/collection/$slug" params={{ slug: "luxury-decor" }}>
                     Explore Collections
                   </Link>
@@ -196,7 +196,7 @@ function Home() {
                 className="group relative block overflow-hidden rounded-md"
               >
                 <img
-                  src={IMAGES[CATEGORIES[(i * 3) % CATEGORIES.length].image]}
+                  src={IMAGES[CATEGORIES[(i * 3) % CATEGORIES.length]?.image ?? "canvas"]}
                   alt={`${s.name} décor`}
                   loading="lazy"
                   width={1024}

@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 import { ProductCard } from "@/components/site/ProductCard";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { CustomerReviews } from "@/components/site/ReviewForm";
 import {
   IMAGES,
   completeTheLook,
@@ -108,7 +108,7 @@ function ProductPage() {
             onMouseLeave={() => setZoom(false)}
           >
             <img
-              src={IMAGES[product.gallery[active]]}
+              src={IMAGES[product.gallery[active] ?? product.image]}
               alt={`${product.name} — view ${active + 1}`}
               width={1024}
               height={1024}
@@ -342,26 +342,9 @@ function ProductPage() {
               ))}
             </ul>
 
-            <form
-              className="mt-8 rounded-md border p-5"
-              onSubmit={(e) => {
-                e.preventDefault();
-                toast.success("Thanks! Your review is in for moderation.");
-                e.currentTarget.reset();
-              }}
-            >
-              <p className="eyebrow">Write a review</p>
-              <div className="mt-3 flex gap-1">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <Star key={s} className="h-5 w-5 fill-brass text-brass" />
-                ))}
-              </div>
-              <Textarea className="mt-3" placeholder="How does it look in your space?" required />
-              <div className="mt-3 flex items-center gap-3">
-                <Button type="submit">Submit review</Button>
-                <span className="text-xs text-muted-foreground">Photos welcome</span>
-              </div>
-            </form>
+            <div className="mt-8">
+              <CustomerReviews productSlug={product.slug} />
+            </div>
           </div>
         </div>
       </section>

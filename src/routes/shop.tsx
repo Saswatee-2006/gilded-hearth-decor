@@ -21,32 +21,34 @@ import {
 } from "@/lib/catalog";
 
 type ShopSearch = {
-  q?: string;
-  category?: string;
-  style?: string;
-  room?: string;
-  material?: string;
-  price?: string;
-  rating?: number;
-  instock?: boolean;
-  discount?: boolean;
-  sort?: string;
-  view?: "grid" | "list";
+  q?: string | undefined;
+  category?: string | undefined;
+  style?: string | undefined;
+  room?: string | undefined;
+  material?: string | undefined;
+  price?: string | undefined;
+  rating?: number | undefined;
+  instock?: boolean | undefined;
+  discount?: boolean | undefined;
+  sort?: string | undefined;
+  view?: "grid" | "list" | undefined;
 };
+
+const str = (v: unknown) => (typeof v === "string" && v.length > 0 ? v : undefined);
 
 export const Route = createFileRoute("/shop")({
   validateSearch: (search: Record<string, unknown>): ShopSearch => ({
-    q: typeof search.q === "string" ? search.q : undefined,
-    category: typeof search.category === "string" ? search.category : undefined,
-    style: typeof search.style === "string" ? search.style : undefined,
-    room: typeof search.room === "string" ? search.room : undefined,
-    material: typeof search.material === "string" ? search.material : undefined,
-    price: typeof search.price === "string" ? search.price : undefined,
-    rating: Number(search.rating) > 0 ? Number(search.rating) : undefined,
-    instock: search.instock === true || search.instock === "true" ? true : undefined,
-    discount: search.discount === true || search.discount === "true" ? true : undefined,
-    sort: typeof search.sort === "string" ? search.sort : undefined,
-    view: search.view === "list" ? "list" : undefined,
+    q: str(search["q"]),
+    category: str(search["category"]),
+    style: str(search["style"]),
+    room: str(search["room"]),
+    material: str(search["material"]),
+    price: str(search["price"]),
+    rating: Number(search["rating"]) > 0 ? Number(search["rating"]) : undefined,
+    instock: search["instock"] === true || search["instock"] === "true" ? true : undefined,
+    discount: search["discount"] === true || search["discount"] === "true" ? true : undefined,
+    sort: str(search["sort"]),
+    view: search["view"] === "list" ? "list" : undefined,
   }),
   head: () => ({
     meta: [

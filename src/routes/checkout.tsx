@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useAuth } from "@/lib/auth";
 import { formatINR } from "@/lib/catalog";
+import { saveOrder } from "@/lib/orders";
 import { FREE_SHIPPING_THRESHOLD, useShop, type Order } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +30,8 @@ const STEPS = ["Address", "Delivery", "Payment", "Confirmation"];
 
 function CheckoutPage() {
   const { cartProducts, subtotal, placeOrder } = useShop();
+  const { user } = useAuth();
+  const [saving, setSaving] = useState(false);
   const [step, setStep] = useState(0);
   const [order, setOrder] = useState<Order | null>(null);
   const [delivery, setDelivery] = useState("standard");
@@ -176,13 +180,15 @@ function CheckoutPage() {
           {step === 2 && (
             <>
               <RadioGroup value={payment} onValueChange={setPayment} className="space-y-3">
-                {[
-                  ["upi", "UPI — GPay, PhonePe, Paytm"],
-                  ["credit", "Credit Card"],
-                  ["debit", "Debit Card"],
-                  ["netbanking", "Net Banking"],
-                  ["cod", "Cash on Delivery"],
-                ].map(([id, label]) => (
+                {(
+                  [
+                    ["upi", "UPI — GPay, PhonePe, Paytm"],
+                    ["credit", "Credit Card"],
+                    ["debit", "Debit Card"],
+                    ["netbanking", "Net Banking"],
+                    ["cod", "Cash on Delivery"],
+                  ] as const
+                ).map(([id, label]) => (
                   <label key={id} className="flex cursor-pointer items-center gap-3 rounded-md border p-4 text-sm">
                     <RadioGroupItem value={id} id={id} />
                     {label}
@@ -202,20 +208,41 @@ function CheckoutPage() {
               </Button>
             )}
             <Button
-              disabled={!canContinue}
-              onClick={() => {
+              disabled={!canContinue || saving}
+              onClick={async () => {
                 if (step === 0 && !canContinue) return;
                 if (step < 2) {
                   setStep((s) => s + 1);
                   return;
                 }
+                setSaving(true);
+                const lines = cartProducts.map(({ product, qty }) => ({ product, qty }));
                 const placed = placeOrder(total);
+                if (user) {
+                  try {
+                    await saveOrder({
+                      userId: user.id,
+                      orderNumber: placed.id,
+                      paymentMethod: payment,
+                      deliveryMethod: delivery,
+                      subtotal,
+                      discount: 0,
+                      shipping: shipping + express,
+                      total,
+                      address,
+                      lines,
+                    });
+                  } catch {
+                    toast.error("Order placed, but we couldn't save it to your account.");
+                  }
+                }
+                setSaving(false);
                 setOrder(placed);
                 setStep(3);
                 toast.success("Order placed — confirmation sent to your email");
               }}
             >
-              {step < 2 ? "Continue" : `Pay ${formatINR(total)}`}
+              {step < 2 ? "Continue" : saving ? "Placing order…" : `Pay ${formatINR(total)}`}
             </Button>
           </div>
           {step === 0 && !canContinue && (
