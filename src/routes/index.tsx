@@ -42,7 +42,7 @@ function SectionHead({
               {action.label} <ArrowRight className="ml-1 h-4 w-4" />
             </Link>
           ) : (
-            <Link to="/shop">
+            <Link to={action.to}>
               {action.label} <ArrowRight className="ml-1 h-4 w-4" />
             </Link>
           )}
@@ -80,7 +80,7 @@ function Home() {
                   <Link to="/shop">Shop Décor</Link>
                 </Button>
                 <Button size="lg" variant="heroOutline" asChild>
-                  <Link to={`/collection/${"luxury-decor" }`}>
+                  <Link to="/collection/luxury-decor">
                     Explore Collections
                   </Link>
                 </Button>
@@ -121,7 +121,7 @@ function Home() {
             <Reveal key={c.slug} delay={i * 40}>
               <Link
                 to={`/category/${c.slug }`}
-                className="group block overflow-hidden rounded-md bg-secondary"
+                className="group block overflow-hidden rounded-md bg-secondary min-w-0"
               >
                 <div className="relative">
                   <img
@@ -171,9 +171,8 @@ function Home() {
           {STYLES.map((s, i) => (
             <Reveal key={s.tag} delay={i * 30}>
               <Link
-                to="/shop"
-                search={{ style: s.tag }}
-                className="group relative block overflow-hidden rounded-md"
+                to={`/shop?style=${s.tag}`}
+                className="group relative block overflow-hidden rounded-md min-w-0"
               >
                 <img
                   src={IMAGES[CATEGORIES[(i * 3) % CATEGORIES.length]?.image ?? "canvas"]}
@@ -201,13 +200,12 @@ function Home() {
             title="Decorate Every Corner"
             copy="Pieces chosen for the way each room is actually lived in."
           />
-          <div className="no-scrollbar -mx-4 flex snap-x gap-4 overflow-x-auto px-4 md:mx-0 md:grid md:grid-cols-4 md:px-0">
+          <div className="no-scrollbar flex snap-x gap-4 overflow-x-auto md:grid md:grid-cols-4">
             {ROOMS.map((r) => (
               <Link
                 key={r.slug}
-                to="/shop"
-                search={{ room: r.slug }}
-                className="group w-64 shrink-0 snap-start overflow-hidden rounded-md md:w-auto"
+                to={`/shop?room=${r.slug}`}
+                className="group w-[80vw] max-w-[256px] shrink-0 snap-start overflow-hidden rounded-md md:w-auto"
               >
                 <img
                   src={IMAGES[r.image]}
@@ -238,7 +236,7 @@ function Home() {
             <Link
               key={p.id}
               to={`/product/${p.slug }`}
-              className="group block break-inside-avoid overflow-hidden rounded-md"
+              className="group block break-inside-avoid overflow-hidden rounded-md min-w-0"
             >
               <img
                 src={IMAGES[p.image]}
@@ -292,7 +290,7 @@ function Home() {
               Statement pieces that bring personality to your space.
             </p>
             <Button size="lg" className="mt-7" asChild>
-              <Link to={`/collection/${"statement-pieces" }`}>
+              <Link to="/collection/statement-pieces">
                 Explore the Collection
               </Link>
             </Button>
@@ -326,8 +324,7 @@ function Home() {
               return (
                 <Link
                   key={slug}
-                  to="/collection/$slug"
-                  params={{ slug }}
+                  to={`/collection/${slug}`}
                   className="card-soft group rounded-md p-6"
                 >
                   <p className="font-display text-2xl capitalize">{slug.replace(/-/g, " ")}</p>
@@ -363,4 +360,4 @@ function Home() {
   );
 }
 
-export default SectionHead;
+export default Home;

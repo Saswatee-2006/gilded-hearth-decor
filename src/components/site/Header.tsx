@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Heart, Menu, Search, ShoppingBag, User } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -16,6 +16,7 @@ export function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -36,7 +37,7 @@ export function Header() {
         {/* Mobile menu */}
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu">
+            <Button variant="ghost" size="icon" className="h-8 w-8 lg:hidden" aria-label="Open menu">
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
@@ -47,6 +48,9 @@ export function Header() {
             <nav className="mt-6 space-y-6">
               <Link to="/shop" className="block text-base">
                 Shop All
+              </Link>
+              <Link to="/" className={cn("block text-base", location.pathname === "/" && "text-accent")}>
+                Home
               </Link>
               {NAV_GROUPS.map((g) => (
                 <div key={g.title}>
@@ -69,8 +73,8 @@ export function Header() {
           </SheetContent>
         </Sheet>
 
-        <Link to="/" className="flex flex-col leading-none">
-          <span className="font-display text-2xl tracking-wide md:text-[28px]">Aarohan</span>
+        <Link to="/" className="flex flex-col leading-none shrink-1 min-w-0">
+          <span className="font-display text-xl tracking-wide md:text-[28px] truncate">Aarohan</span>
           <span className="eyebrow hidden md:block">Décor Atelier</span>
         </Link>
 
@@ -84,6 +88,9 @@ export function Header() {
           >
             Shop
           </button>
+          <Link to="/" onMouseEnter={() => setShopOpen(false)} className={cn("link-underline text-sm", location.pathname === "/" && "text-accent")}>
+            Home
+          </Link>
           <Link to="/shop" onMouseEnter={() => setShopOpen(false)} className="link-underline text-sm">
             All Products
           </Link>
@@ -95,11 +102,11 @@ export function Header() {
           </Link>
         </nav>
 
-        <div className="ml-auto flex items-center gap-1">
-          <Button variant="ghost" size="icon" aria-label="Search" onClick={() => setSearchOpen(true)}>
+        <div className="ml-auto flex items-center gap-0 sm:gap-1 shrink-0">
+          <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" aria-label="Search" onClick={() => setSearchOpen(true)}>
             <Search className="h-[18px] w-[18px]" />
           </Button>
-          <Button variant="ghost" size="icon" asChild aria-label="Wishlist">
+          <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" asChild aria-label="Wishlist">
             <Link to="/wishlist" className="relative">
               <Heart className="h-[18px] w-[18px]" />
               {wishlist.length > 0 && (
@@ -112,6 +119,7 @@ export function Header() {
           <Button
             variant="ghost"
             size="icon"
+            className="h-8 w-8 sm:h-10 sm:w-10"
             asChild
             aria-label={user ? "My account" : "Sign in"}
           >
@@ -122,7 +130,7 @@ export function Header() {
               )}
             </Link>
           </Button>
-          <Button variant="ghost" size="icon" asChild aria-label="Cart">
+          <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" asChild aria-label="Cart">
             <Link to="/cart" className="relative">
               <ShoppingBag className="h-[18px] w-[18px]" />
               {cartCount > 0 && (

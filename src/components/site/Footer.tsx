@@ -99,7 +99,7 @@ export function Footer() {
             <Link to="/policies" className="link-underline">Refund Policy</Link>
             <Link to="/shipping" className="link-underline">Shipping Policy</Link>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {["UPI", "VISA", "MC", "RuPay", "COD"].map((p) => (
               <span key={p} className="rounded-sm border px-2 py-1 tracking-wider">
                 {p}

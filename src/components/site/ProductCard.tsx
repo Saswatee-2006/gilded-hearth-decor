@@ -14,7 +14,7 @@ export function ProductCard({ product, className }: { product: Product; classNam
   const saved = isWishlisted(product.id);
 
   return (
-    <article className={cn("group relative flex flex-col", className)}>
+    <article className={cn("group relative flex flex-col min-w-0", className)}>
       <div className="relative overflow-hidden rounded-md bg-secondary">
         <Link to={`/product/${product.slug }`} aria-label={product.name}>
           <img
@@ -55,8 +55,8 @@ export function ProductCard({ product, className }: { product: Product; classNam
           />
         </button>
 
-        <div className="absolute inset-x-3 bottom-3 flex gap-2 opacity-0 translate-y-2 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
-          <Button size="sm" className="flex-1" onClick={() => {
+        <div className="absolute inset-x-3 bottom-3 flex flex-col sm:flex-row gap-2 opacity-0 translate-y-2 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
+          <Button size="sm" className="flex-1 min-w-0" onClick={() => {
             if (!user) {
               navigate(`/auth?returnTo=${encodeURIComponent(window.location.pathname)}`);
               return;
@@ -65,7 +65,7 @@ export function ProductCard({ product, className }: { product: Product; classNam
           }}>
             Add to Cart
           </Button>
-          <Button size="sm" variant="secondary" asChild>
+          <Button size="sm" variant="secondary" className="min-w-0" asChild>
             <Link to={`/product/${product.slug }`}>
               View
             </Link>
@@ -75,7 +75,7 @@ export function ProductCard({ product, className }: { product: Product; classNam
 
       <div className="mt-3 space-y-1">
         <p className="eyebrow">{product.subcategory}</p>
-        <h3 className="font-display text-lg leading-snug">
+        <h3 className="font-display text-lg leading-snug break-words">
           <Link
             to={`/product/${product.slug }`}
             className="link-underline"

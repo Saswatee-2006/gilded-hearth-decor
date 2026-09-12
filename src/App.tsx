@@ -9,6 +9,8 @@ import { SearchDialog } from "@/components/site/SearchDialog";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
 import { ShopProvider } from "@/lib/shop-store";
+import { ScrollToTop } from "@/components/ScrollToTop";
+import { GlobalBackButton } from "@/components/GlobalBackButton";
 
 // Pages
 import IndexPage from "./routes/index";
@@ -35,9 +37,10 @@ import AdminPage from "./routes/_authenticated/admin";
 function SiteLayout() {
   const [searchOpen, setSearchOpen] = useState(false);
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col w-full max-w-full overflow-x-hidden">
       <Header />
       <main className="flex-1 pb-16 lg:pb-0">
+        <GlobalBackButton />
         <Outlet />
       </main>
       <Footer />
@@ -78,6 +81,7 @@ export function App() {
       <AuthProvider>
         <ShopProvider>
           <BrowserRouter>
+            <ScrollToTop />
             <Routes>
               <Route element={<SiteLayout />}>
                 <Route path="/" element={<IndexPage />} />
