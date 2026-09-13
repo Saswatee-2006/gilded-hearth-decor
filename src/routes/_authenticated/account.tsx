@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
-import { Trash2 } from "lucide-react";
+import { Trash2, Heart, LogOut, Edit2, Package, ChevronRight, ShoppingBag, Truck, CheckCircle2, XCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -8,13 +8,12 @@ import { ProductCard } from "@/components/site/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PRODUCTS, formatINR } from "@/lib/catalog";
 import { useShop } from "@/lib/shop-store";
-import { useTheme } from "@/components/theme-provider";
-
+import { cn } from "@/lib/utils";
 const emptyAddress = {
   label: "Home",
   full_name: "",
@@ -31,7 +30,6 @@ function AccountPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { wishlist, recentlyViewed } = useShop();
-  const { theme, setTheme } = useTheme();
   const [draft, setDraft] = useState(emptyAddress);
   const [profileDraft, setProfileDraft] = useState<{ full_name: string; phone: string } | null>(null);
 
@@ -125,250 +123,323 @@ function AccountPage() {
     draft.state.trim().length > 1 &&
     /^\d{6}$/.test(draft.pincode);
 
+  const [orderFilter, setOrderFilter] = useState("All");
+  
+  const allOrders = ordersQuery.data ?? [];
+  const activeOrdersCount = allOrders.filter((o) => !["delivered", "cancelled"].includes(o.status.toLowerCase())).length;
+  const completedOrdersCount = allOrders.filter((o) => o.status.toLowerCase() === "delivered").length;
+  
+  const displayedOrders = orderFilter === "All" 
+    ? allOrders 
+    : allOrders.filter((o) => o.status.toLowerCase() === orderFilter.toLowerCase());
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 md:px-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-display text-4xl md:text-5xl">My Account</h1>
-          <p className="mt-2 text-sm text-muted-foreground">{user?.email}</p>
-        </div>
-        <div className="flex gap-3">
-          {isAdmin && (
-            <Button variant="secondary" asChild>
-              <Link to="/admin">Admin</Link>
-            </Button>
-          )}
-          <Button
-            variant="outline"
-            onClick={async () => {
-              await queryClient.cancelQueries();
-              queryClient.clear();
-              await signOut();
-              navigate({ to: "/auth", replace: true });
-            }}
-          >
-            Sign out
-          </Button>
-        </div>
-      </div>
-
-      <Tabs defaultValue="orders" className="mt-10">
-        <TabsList className="flex-wrap">
-          <TabsTrigger value="orders">My Orders</TabsTrigger>
-          <TabsTrigger value="wishlist">Wishlist</TabsTrigger>
-          <TabsTrigger value="viewed">Recently Viewed</TabsTrigger>
-          <TabsTrigger value="addresses">Addresses</TabsTrigger>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="orders" className="mt-8">
-          {ordersQuery.isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading your orders…</p>
-          ) : (ordersQuery.data?.length ?? 0) === 0 ? (
-            <div className="rounded-md border border-dashed p-14 text-center">
-              <p className="font-display text-2xl">No orders yet</p>
-              <Button className="mt-5" asChild>
-                <Link to="/shop">Start shopping</Link>
-              </Button>
+    <div className="mx-auto max-w-7xl px-4 py-12 md:px-8">
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-[300px_1fr] lg:gap-12">
+        
+        {/* Left Column: Sidebar */}
+        <div className="space-y-4">
+          {/* Profile Card */}
+          <div className="flex flex-col items-center rounded-2xl bg-card p-8 text-center shadow-soft border border-border/50">
+            <div className="mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-accent text-4xl text-accent-foreground font-display">
+              {(profile.full_name || user?.email || "U").charAt(0).toUpperCase()}
             </div>
-          ) : (
-            <ul className="space-y-5">
-              {ordersQuery.data?.map((o) => (
-                <li key={o.id}>
-                  <Link to={`/order/${o.id }`} className="block rounded-md bg-card p-5 shadow-soft transition-transform hover:scale-[1.02]">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-sm font-medium">Order #{o.order_number}</p>
-                      <span className="rounded-sm bg-secondary px-2 py-1 text-xs capitalize">
-                        {o.status}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {new Date(o.created_at).toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}{" "}
-                      · {formatINR(o.total)} · {o.payment_method.toUpperCase()}
-                    </p>
-                    <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
-                      {o.order_items.map((item) => (
-                        <li key={item.id}>
-                          {item.name} × {item.qty}
-                        </li>
-                      ))}
-                    </ul>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </TabsContent>
-
-        <TabsContent value="wishlist" className="mt-8">
-          {saved.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nothing saved yet.</p>
-          ) : (
-            <div className="grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-4">
-              {saved.map((p) => (
-                <ProductCard key={p.id} product={p} />
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="viewed" className="mt-8">
-          {viewed.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Browse a few pieces and they'll appear here.
-            </p>
-          ) : (
-            <div className="grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-4">
-              {viewed.map((p) => (
-                <ProductCard key={p.id} product={p} />
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="addresses" className="mt-8 grid gap-10 lg:grid-cols-2">
-          <div>
-            <p className="eyebrow">Saved addresses</p>
-            {(addressesQuery.data?.length ?? 0) === 0 ? (
-              <p className="mt-4 text-sm text-muted-foreground">No addresses saved yet.</p>
-            ) : (
-              <ul className="mt-4 space-y-4">
-                {addressesQuery.data?.map((a) => (
-                  <li key={a.id} className="rounded-md bg-card p-4 text-sm shadow-soft">
-                    <div className="flex items-start justify-between gap-3">
+            <h2 className="font-display text-2xl">{profile.full_name || "Valued Customer"}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{user?.email}</p>
+            {profile.phone && <p className="mt-1 text-sm text-muted-foreground">{profile.phone}</p>}
+            
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="mt-6 w-full rounded-full border-border/60 shadow-sm hover:bg-accent/5">
+                  <Edit2 className="mr-2 h-4 w-4" />
+                  Edit Profile
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="font-display text-2xl">Edit Profile</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-8 py-4">
+                  {/* Personal Info */}
+                  <div className="space-y-4">
+                    <p className="eyebrow text-muted-foreground">Personal Information</p>
+                    <div className="grid gap-4">
                       <div>
-                        <p>
-                          {a.full_name} · {a.label}
-                        </p>
-                        <p className="mt-1 text-muted-foreground">
-                          {a.line1}
-                          {a.line2 ? `, ${a.line2}` : ""}, {a.city}, {a.state} {a.pincode}
-                        </p>
-                        <p className="mt-1 text-muted-foreground">{a.phone}</p>
+                        <Label htmlFor="p-name" className="text-xs">Full Name</Label>
+                        <Input
+                          id="p-name"
+                          value={profile.full_name}
+                          maxLength={80}
+                          onChange={(e) => setProfileDraft({ ...profile, full_name: e.target.value })}
+                          className="mt-1.5"
+                        />
                       </div>
-                      <button
-                        aria-label="Remove address"
-                        onClick={() => deleteAddress.mutate(a.id)}
-                        className="text-muted-foreground transition-colors hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <div>
+                        <Label htmlFor="p-phone" className="text-xs">Mobile Number</Label>
+                        <Input
+                          id="p-phone"
+                          value={profile.phone}
+                          maxLength={10}
+                          onChange={(e) => setProfileDraft({ ...profile, phone: e.target.value })}
+                          className="mt-1.5"
+                        />
+                      </div>
+                    </div>
+                    <Button
+                      className="w-full"
+                      disabled={saveProfile.isPending || !profileDraft}
+                      onClick={() => saveProfile.mutate()}
+                    >
+                      Save Profile
+                    </Button>
+                  </div>
+
+                  <div className="h-px bg-border" />
+
+                  {/* Add Address */}
+                  <div className="space-y-4">
+                    <p className="eyebrow text-muted-foreground">Add New Address</p>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {(
+                        [
+                          ["full_name", "Full Name"],
+                          ["phone", "Mobile Number"],
+                          ["line1", "Address"],
+                          ["line2", "Apartment / House"],
+                          ["city", "City"],
+                          ["state", "State"],
+                          ["pincode", "Pincode"],
+                          ["label", "Label"],
+                        ] as const
+                      ).map(([key, label]) => (
+                        <div key={key} className={key === "line1" ? "sm:col-span-2" : ""}>
+                          <Label htmlFor={`addr-${key}`} className="text-xs">{label}</Label>
+                          <Input
+                            id={`addr-${key}`}
+                            value={draft[key as keyof typeof draft]}
+                            maxLength={key === "pincode" ? 6 : key === "phone" ? 10 : 120}
+                            onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
+                            className="mt-1.5"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <Button
+                      className="w-full"
+                      disabled={!addressValid || addAddress.isPending}
+                      onClick={() => addAddress.mutate()}
+                    >
+                      Save Address
+                    </Button>
+                  </div>
+
+                  <div className="h-px bg-border" />
+
+                  {/* Saved Addresses List */}
+                  <div className="space-y-4">
+                    <p className="eyebrow text-muted-foreground">Saved Addresses</p>
+                    {(addressesQuery.data?.length ?? 0) === 0 ? (
+                      <p className="text-sm text-muted-foreground">No addresses saved yet.</p>
+                    ) : (
+                      <ul className="space-y-3">
+                        {addressesQuery.data?.map((a) => (
+                          <li key={a.id} className="rounded-lg border border-border/50 p-3 text-sm flex items-start justify-between gap-3">
+                            <div>
+                              <p className="font-medium">{a.full_name} <span className="text-muted-foreground font-normal ml-1">· {a.label}</span></p>
+                              <p className="mt-1 text-muted-foreground leading-relaxed text-xs">
+                                {a.line1}{a.line2 ? `, ${a.line2}` : ""}, {a.city}, {a.state} {a.pincode}
+                              </p>
+                              <p className="mt-1 text-muted-foreground text-xs">{a.phone}</p>
+                            </div>
+                            <button
+                              aria-label="Remove address"
+                              onClick={() => deleteAddress.mutate(a.id)}
+                              className="text-muted-foreground hover:text-destructive shrink-0"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {/* Sidebar Nav */}
+          <div className="flex flex-col gap-3 pt-2">
+            <Link to="/wishlist" className="group flex items-center justify-between rounded-xl bg-card p-4 shadow-soft border border-border/50 transition-all hover:border-border hover:shadow-md">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/30 text-accent transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
+                  <Heart className="h-5 w-5" />
+                </div>
+                <span className="font-medium">My Wishlist</span>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
+            </Link>
+            
+            {isAdmin && (
+              <Link to="/admin" className="group flex items-center justify-between rounded-xl bg-card p-4 shadow-soft border border-border/50 transition-all hover:border-border hover:shadow-md">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/30 text-accent transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
+                    <Package className="h-5 w-5" />
+                  </div>
+                  <span className="font-medium">Admin Dashboard</span>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
+              </Link>
+            )}
+
+            <button
+              onClick={async () => {
+                await queryClient.cancelQueries();
+                queryClient.clear();
+                await signOut();
+                navigate({ to: "/auth", replace: true });
+              }}
+              className="group flex w-full items-center justify-between rounded-xl bg-card p-4 shadow-soft border border-border/50 transition-all hover:border-red-200 hover:bg-red-50 dark:hover:border-red-900/50 dark:hover:bg-red-950/20"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-600 transition-colors group-hover:bg-red-600 group-hover:text-white dark:bg-red-950 dark:text-red-400 dark:group-hover:bg-red-900 dark:group-hover:text-red-100">
+                  <LogOut className="h-5 w-5" />
+                </div>
+                <span className="font-medium text-red-600 dark:text-red-400">Log out</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Right Column: Main Area */}
+        <div className="space-y-8">
+          
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div className="flex flex-col justify-center rounded-xl bg-card p-5 shadow-soft border border-border/50">
+              <div className="flex items-center gap-2 text-muted-foreground mb-3">
+                <ShoppingBag className="h-4 w-4" />
+                <p className="text-[11px] font-semibold uppercase tracking-wider">Total Orders</p>
+              </div>
+              <p className="font-display text-4xl">{allOrders.length}</p>
+            </div>
+            
+            <div className="flex flex-col justify-center rounded-xl bg-card p-5 shadow-soft border border-border/50">
+              <div className="flex items-center gap-2 text-muted-foreground mb-3">
+                <Truck className="h-4 w-4" />
+                <p className="text-[11px] font-semibold uppercase tracking-wider">Active Orders</p>
+              </div>
+              <p className="font-display text-4xl">{activeOrdersCount}</p>
+            </div>
+
+            <div className="flex flex-col justify-center rounded-xl bg-card p-5 shadow-soft border border-border/50">
+              <div className="flex items-center gap-2 text-muted-foreground mb-3">
+                <CheckCircle2 className="h-4 w-4" />
+                <p className="text-[11px] font-semibold uppercase tracking-wider">Completed</p>
+              </div>
+              <p className="font-display text-4xl">{completedOrdersCount}</p>
+            </div>
+
+            <div className="flex flex-col justify-center rounded-xl bg-card p-5 shadow-soft border border-border/50">
+              <div className="flex items-center gap-2 text-muted-foreground mb-3">
+                <Heart className="h-4 w-4" />
+                <p className="text-[11px] font-semibold uppercase tracking-wider">Wishlist</p>
+              </div>
+              <p className="font-display text-4xl">{wishlist.length}</p>
+            </div>
+          </div>
+
+          {/* Orders Section */}
+          <div className="rounded-2xl bg-card p-6 md:p-8 shadow-soft border border-border/50">
+            <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+              <div>
+                <h3 className="font-display text-2xl">My Orders</h3>
+                <p className="mt-1 text-sm text-muted-foreground">View and manage your order history.</p>
+              </div>
+            </div>
+
+            {/* Status Filters */}
+            <div className="mb-8 flex overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 hide-scrollbar">
+              <div className="flex gap-2">
+                {["All", "Processing", "Confirmed", "Shipped", "Cancelled"].map(status => (
+                  <button
+                    key={status}
+                    onClick={() => setOrderFilter(status)}
+                    className={cn(
+                      "whitespace-nowrap rounded-full px-5 py-2 text-sm font-medium transition-colors border",
+                      orderFilter === status 
+                        ? "bg-foreground text-background border-foreground" 
+                        : "bg-transparent text-muted-foreground border-border/60 hover:border-foreground/30 hover:text-foreground"
+                    )}
+                  >
+                    {status}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Order List */}
+            {ordersQuery.isLoading ? (
+              <div className="py-12 text-center text-sm text-muted-foreground">Loading your orders…</div>
+            ) : displayedOrders.length === 0 ? (
+              <div className="rounded-xl border border-dashed p-12 text-center">
+                <Package className="mx-auto h-12 w-12 text-muted-foreground/30 mb-4" />
+                <p className="font-display text-xl mb-1">No orders found</p>
+                <p className="text-sm text-muted-foreground mb-6">You don't have any orders matching this status.</p>
+                {orderFilter === "All" && (
+                  <Button asChild>
+                    <Link to="/shop">Start Shopping</Link>
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <ul className="space-y-4">
+                {displayedOrders.map((o) => (
+                  <li key={o.id}>
+                    <div className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-border/60 p-5 transition-colors hover:border-border hover:bg-accent/5">
+                      <div className="flex items-start gap-4">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-accent/20">
+                          <Package className="h-6 w-6 text-accent-foreground/70" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-3">
+                            <p className="font-medium">Order #{o.order_number}</p>
+                            <span className={cn(
+                              "rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
+                              o.status === "delivered" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
+                              o.status === "cancelled" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
+                              "bg-accent/30 text-accent-foreground"
+                            )}>
+                              {o.status}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {new Date(o.created_at).toLocaleDateString("en-IN", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </p>
+                          <p className="mt-2 text-sm text-muted-foreground line-clamp-1">
+                            {o.order_items.map((item: any) => `${item.name} × ${item.qty}`).join(", ")}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between sm:flex-col sm:items-end sm:justify-center gap-3 shrink-0">
+                        <p className="font-medium text-lg">{formatINR(o.total)}</p>
+                        <Button variant="outline" size="sm" className="rounded-full" asChild>
+                          <Link to={`/order/${o.id}`}>View Order</Link>
+                        </Button>
+                      </div>
                     </div>
                   </li>
                 ))}
               </ul>
             )}
           </div>
-
-          <div className="rounded-md bg-card p-6 shadow-soft">
-            <p className="eyebrow">Add an address</p>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              {(
-                [
-                  ["full_name", "Full Name"],
-                  ["phone", "Mobile Number"],
-                  ["line1", "Address"],
-                  ["line2", "Apartment / House"],
-                  ["city", "City"],
-                  ["state", "State"],
-                  ["pincode", "Pincode"],
-                  ["label", "Label"],
-                ] as const
-              ).map(([key, label]) => (
-                <div key={key} className={key === "line1" ? "sm:col-span-2" : ""}>
-                  <Label htmlFor={`addr-${key}`} className="text-xs">
-                    {label}
-                  </Label>
-                  <Input
-                    id={`addr-${key}`}
-                    value={draft[key]}
-                    maxLength={key === "pincode" ? 6 : key === "phone" ? 10 : 120}
-                    onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
-                    className="mt-1.5"
-                  />
-                </div>
-              ))}
-            </div>
-            <Button
-              className="mt-6"
-              disabled={!addressValid || addAddress.isPending}
-              onClick={() => addAddress.mutate()}
-            >
-              Save address
-            </Button>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="profile" className="mt-8 max-w-md space-y-8">
-          <div className="rounded-md bg-card p-6 shadow-soft">
-            <p className="eyebrow mb-4">Personal Information</p>
-            <div className="grid gap-4">
-              <div>
-                <Label htmlFor="p-name" className="text-xs">
-                  Full Name
-                </Label>
-                <Input
-                  id="p-name"
-                  value={profile.full_name}
-                  maxLength={80}
-                  onChange={(e) => setProfileDraft({ ...profile, full_name: e.target.value })}
-                  className="mt-1.5"
-                />
-              </div>
-              <div>
-                <Label htmlFor="p-phone" className="text-xs">
-                  Mobile Number
-                </Label>
-                <Input
-                  id="p-phone"
-                  value={profile.phone}
-                  maxLength={10}
-                  onChange={(e) => setProfileDraft({ ...profile, phone: e.target.value })}
-                  className="mt-1.5"
-                />
-              </div>
-            </div>
-            <Button
-              className="mt-6"
-              disabled={saveProfile.isPending || !profileDraft}
-              onClick={() => saveProfile.mutate()}
-            >
-              Save changes
-            </Button>
-          </div>
-
-          <div className="rounded-md bg-card p-6 shadow-soft">
-            <p className="eyebrow mb-4">Appearance</p>
-            <div className="grid grid-cols-3 gap-3">
-              <button
-                type="button"
-                onClick={() => setTheme("light")}
-                className={`flex flex-col items-center justify-center rounded-md border-2 p-3 transition-colors ${theme === 'light' ? 'border-primary bg-primary/5' : 'border-border hover:bg-accent/5'}`}
-              >
-                <span className="text-sm font-medium">Light</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setTheme("dark")}
-                className={`flex flex-col items-center justify-center rounded-md border-2 p-3 transition-colors ${theme === 'dark' ? 'border-primary bg-primary/5' : 'border-border hover:bg-accent/5'}`}
-              >
-                <span className="text-sm font-medium">Dark</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setTheme("system")}
-                className={`flex flex-col items-center justify-center rounded-md border-2 p-3 transition-colors ${theme === 'system' ? 'border-primary bg-primary/5' : 'border-border hover:bg-accent/5'}`}
-              >
-                <span className="text-sm font-medium">System</span>
-              </button>
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
     </div>
   );
 }

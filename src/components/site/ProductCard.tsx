@@ -1,16 +1,12 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Heart } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/lib/auth";
 import { IMAGES, formatINR, type Product } from "@/lib/catalog";
 import { useShop } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
 
 export function ProductCard({ product, className }: { product: Product; className?: string }) {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const { addToCart, toggleWishlist, isWishlisted } = useShop();
+  const { toggleWishlist, isWishlisted } = useShop();
   const saved = isWishlisted(product.id);
 
   return (
@@ -54,23 +50,6 @@ export function ProductCard({ product, className }: { product: Product; classNam
             )}
           />
         </button>
-
-        <div className="absolute inset-x-3 bottom-3 flex flex-col sm:flex-row gap-2 opacity-0 translate-y-2 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
-          <Button size="sm" className="flex-1 min-w-0" onClick={() => {
-            if (!user) {
-              navigate(`/auth?returnTo=${encodeURIComponent(window.location.pathname)}`);
-              return;
-            }
-            addToCart(product.id);
-          }}>
-            Add to Cart
-          </Button>
-          <Button size="sm" variant="secondary" className="min-w-0" asChild>
-            <Link to={`/product/${product.slug }`}>
-              View
-            </Link>
-          </Button>
-        </div>
       </div>
 
       <div className="mt-3 space-y-1">

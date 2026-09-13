@@ -31,7 +31,6 @@ const COLUMNS = [
     links: [
       { label: "Our Story", to: "/story" },
       { label: "Journal", to: "/journal" },
-      { label: "Careers", to: "/careers" },
     ],
   },
 ];

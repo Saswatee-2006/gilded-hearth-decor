@@ -32,8 +32,9 @@ import FaqsPage from "./routes/faqs";
 import ReturnsPage from "./routes/returns";
 import ShippingPage from "./routes/shipping";
 import PoliciesPage from "./routes/policies";
-import CareersPage from "./routes/careers";
 import AdminPage from "./routes/_authenticated/admin";
+import JournalPage from "./routes/journal";
+import ArticlePage from "./routes/journal.$slug";
 
 function SiteLayout() {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -80,11 +81,11 @@ export function App() {
   useEffect(() => {
     const splash = document.getElementById("aarohan-splash");
     if (splash) {
-      // Small delay to ensure smooth transition right after mount
+      // Ensure the premium loading animations have time to complete gracefully
       const timer = setTimeout(() => {
         splash.classList.add("fade-out");
-        setTimeout(() => splash.remove(), 600);
-      }, 100);
+        setTimeout(() => splash.remove(), 800);
+      }, 2200);
       return () => clearTimeout(timer);
     }
   }, []);
@@ -113,6 +114,9 @@ export function App() {
                   <Route path="order/:id" element={<OrderDetailPage />} />
                   <Route path="admin" element={<AdminPage />} />
                   
+                  <Route path="journal" element={<JournalPage />} />
+                  <Route path="journal/:slug" element={<ArticlePage />} />
+
                   <Route path="track-order" element={<TrackOrderPage />} />
                   <Route path="story" element={<StoryPage />} />
                   <Route path="contact" element={<ContactPage />} />
@@ -120,7 +124,6 @@ export function App() {
                   <Route path="returns" element={<ReturnsPage />} />
                   <Route path="shipping" element={<ShippingPage />} />
                   <Route path="policies" element={<PoliciesPage />} />
-                  <Route path="careers" element={<CareersPage />} />
                   
                   <Route path="*" element={<NotFoundComponent />} />
                 </Route>

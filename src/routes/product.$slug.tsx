@@ -148,10 +148,6 @@ function ProductPage() {
                 </Button>
               </div>
               <Button size="lg" onClick={() => {
-                if (!user) {
-                  navigate({ to: "/auth", search: { returnTo: window.location.pathname } as any });
-                  return;
-                }
                 addToCart(product.id, qty, hasSize ? size : undefined);
               }} disabled={product.stock === 0 || (hasSize && !size)}>
                 Add to Cart
@@ -161,10 +157,6 @@ function ProductPage() {
                 variant="secondary"
                 disabled={product.stock === 0 || (hasSize && !size)}
                 onClick={() => {
-                  if (!user) {
-                    navigate({ to: "/auth", search: { returnTo: window.location.pathname } as any });
-                    return;
-                  }
                   addToCart(product.id, qty, hasSize ? size : undefined);
                   navigate("/checkout");
                 }}

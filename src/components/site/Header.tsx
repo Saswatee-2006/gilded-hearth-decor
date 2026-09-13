@@ -21,17 +21,37 @@ import { useAuth } from "@/lib/auth";
 import { NAV_GROUPS } from "@/lib/catalog";
 import { useShop } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export function Header() {
   const { cartCount, wishlist } = useShop();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  
+  const profileQuery = useQuery({
+    queryKey: ["header-profile", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("*").maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
   const [searchOpen, setSearchOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const location = useLocation();
-  const navigate = useNavigate();
 
   const handleMobileNav = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
@@ -198,20 +218,62 @@ export function Header() {
               )}
             </Link>
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 sm:h-10 sm:w-10"
-            asChild
-            aria-label={user ? "My account" : "Sign in"}
-          >
-            <Link to={user ? "/account" : "/auth"} className="relative">
-              <User className="h-[18px] w-[18px]" />
-              {user && (
-                <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-accent" />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative h-8 w-8 sm:h-10 sm:w-10"
+                aria-label={user ? "My account" : "Sign in"}
+              >
+                <User className="h-[18px] w-[18px]" />
+                {user && (
+                  <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-accent" />
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 mt-2 rounded-xl p-2">
+              {!user ? (
+                <>
+                  <DropdownMenuLabel className="eyebrow px-2 py-2 text-xs">Account Access</DropdownMenuLabel>
+                  <DropdownMenuItem asChild className="cursor-pointer rounded-lg focus:bg-accent/10 focus:text-accent">
+                    <Link to="/auth" className="w-full">Login</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="cursor-pointer rounded-lg focus:bg-accent/10 focus:text-accent">
+                    <Link to="/auth?tab=signup" className="w-full">Sign Up</Link>
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <>
+                  <div className="flex flex-col space-y-1 p-2">
+                    <p className="text-sm font-medium leading-none">
+                      {profileQuery.data?.full_name || "Valued Customer"}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user.email}
+                    </p>
+                  </div>
+                  <DropdownMenuSeparator className="my-1" />
+                  <DropdownMenuItem asChild className="cursor-pointer rounded-lg focus:bg-accent/10 focus:text-accent">
+                    <Link to="/account" className="flex w-full items-center justify-between">
+                      My Account
+                      <span className="text-muted-foreground">→</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="my-1" />
+                  <DropdownMenuItem 
+                    className="cursor-pointer rounded-lg text-red-600 focus:bg-red-50 focus:text-red-700 dark:text-red-400 dark:focus:bg-red-950"
+                    onClick={async () => {
+                      await signOut();
+                      navigate("/");
+                    }}
+                  >
+                    Logout
+                  </DropdownMenuItem>
+                </>
               )}
-            </Link>
-          </Button>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" asChild aria-label="Cart">
             <Link to="/cart" className="relative">
               <ShoppingBag className="h-[18px] w-[18px]" />
