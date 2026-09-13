@@ -22,7 +22,7 @@ function ContactPage() {
       <Block heading="Reach us">
         <p>Care team: care@aarohandecor.in</p>
         <p>Monday to Saturday, 10am – 7pm IST</p>
-        <p>Studio: Aarohan Décor, Jaipur, Rajasthan</p>
+        <p>Studio: Aarohan Décor, Bangalore, Karnataka</p>
       </Block>
 
       <Block heading="Send a message">

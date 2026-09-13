@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="transparent"/>
+  <g fill="#A48C50">
+    <!-- Elegant 'A' -->
+    <path d="M256,70 L380,410 L340,410 L300,300 L212,300 L172,410 L132,410 Z M225,265 L287,265 L256,170 Z" />
+    <!-- Leaf/branch motif wrapped around the right leg of A -->
+    <path d="M315,280 Q350,220 370,180 Q390,200 375,235 Q350,250 315,280 Z" />
+    <path d="M330,220 Q360,170 385,130 Q405,150 385,185 Q365,200 330,220 Z" />
+    <path d="M270,180 Q300,140 330,100 Q355,120 330,150 Q300,165 270,180 Z" />
+  </g>
+</svg>

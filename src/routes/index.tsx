@@ -68,7 +68,7 @@ function Home() {
         <div className="absolute inset-0 flex items-center">
           <div className="mx-auto w-full max-w-7xl px-4 md:px-8">
             <Reveal className="max-w-xl text-primary-foreground">
-              <p className="eyebrow text-primary-foreground/80">Aarohan Décor · Est. 2019</p>
+              <p className="eyebrow text-primary-foreground/80">Aarohan Décor · Est. 2026</p>
               <h1 className="mt-4 font-display text-5xl leading-[1.05] md:text-7xl">
                 Make Your Space Beautiful.
               </h1>

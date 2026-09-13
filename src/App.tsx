@@ -11,6 +11,7 @@ import { AuthProvider } from "@/lib/auth";
 import { ShopProvider } from "@/lib/shop-store";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { GlobalBackButton } from "@/components/GlobalBackButton";
+import { ThemeProvider } from "@/components/theme-provider";
 
 // Pages
 import IndexPage from "./routes/index";
@@ -37,7 +38,7 @@ import AdminPage from "./routes/_authenticated/admin";
 function SiteLayout() {
   const [searchOpen, setSearchOpen] = useState(false);
   return (
-    <div className="flex min-h-screen flex-col w-full max-w-full overflow-x-hidden">
+    <div className="flex min-h-screen flex-col w-full max-w-full">
       <Header />
       <main className="flex-1 pb-16 lg:pb-0">
         <GlobalBackButton />
@@ -77,43 +78,45 @@ const queryClient = new QueryClient();
 
 export function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ShopProvider>
-          <BrowserRouter>
-            <ScrollToTop />
-            <Routes>
-              <Route element={<SiteLayout />}>
-                <Route path="/" element={<IndexPage />} />
-                <Route path="/shop" element={<ShopPage />} />
-                <Route path="/category/:slug" element={<CategoryPage />} />
-                <Route path="/collection/:slug" element={<CollectionPage />} />
-                <Route path="/product/:slug" element={<ProductPage />} />
-                <Route path="/cart" element={<CartPage />} />
-                <Route path="/checkout" element={<CheckoutPage />} />
-                <Route path="/auth" element={<AuthPage />} />
-                <Route path="/wishlist" element={<WishlistPage />} />
-                
-                {/* Authenticated Routes - we will handle auth guards in components */}
-                <Route path="/account" element={<AccountPage />} />
-                <Route path="/order/:id" element={<OrderDetailPage />} />
-                <Route path="/admin" element={<AdminPage />} />
-                
-                <Route path="/track-order" element={<TrackOrderPage />} />
-                <Route path="/story" element={<StoryPage />} />
-                <Route path="/contact" element={<ContactPage />} />
-                <Route path="/faqs" element={<FaqsPage />} />
-                <Route path="/returns" element={<ReturnsPage />} />
-                <Route path="/shipping" element={<ShippingPage />} />
-                <Route path="/policies" element={<PoliciesPage />} />
-                <Route path="/careers" element={<CareersPage />} />
-                
-                <Route path="*" element={<NotFoundComponent />} />
-              </Route>
-            </Routes>
-          </BrowserRouter>
-        </ShopProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ThemeProvider defaultTheme="light" storageKey="aarohan-theme">
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ShopProvider>
+            <BrowserRouter>
+              <ScrollToTop />
+              <Routes>
+                <Route element={<SiteLayout />}>
+                  <Route index element={<IndexPage />} />
+                  <Route path="shop" element={<ShopPage />} />
+                  <Route path="category/:slug" element={<CategoryPage />} />
+                  <Route path="collection/:slug" element={<CollectionPage />} />
+                  <Route path="product/:slug" element={<ProductPage />} />
+                  <Route path="cart" element={<CartPage />} />
+                  <Route path="checkout" element={<CheckoutPage />} />
+                  <Route path="auth" element={<AuthPage />} />
+                  <Route path="wishlist" element={<WishlistPage />} />
+                  
+                  {/* Authenticated Routes - we will handle auth guards in components */}
+                  <Route path="account" element={<AccountPage />} />
+                  <Route path="order/:id" element={<OrderDetailPage />} />
+                  <Route path="admin" element={<AdminPage />} />
+                  
+                  <Route path="track-order" element={<TrackOrderPage />} />
+                  <Route path="story" element={<StoryPage />} />
+                  <Route path="contact" element={<ContactPage />} />
+                  <Route path="faqs" element={<FaqsPage />} />
+                  <Route path="returns" element={<ReturnsPage />} />
+                  <Route path="shipping" element={<ShippingPage />} />
+                  <Route path="policies" element={<PoliciesPage />} />
+                  <Route path="careers" element={<CareersPage />} />
+                  
+                  <Route path="*" element={<NotFoundComponent />} />
+                </Route>
+              </Routes>
+            </BrowserRouter>
+          </ShopProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }

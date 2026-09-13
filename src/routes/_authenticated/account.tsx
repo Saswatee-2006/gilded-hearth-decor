@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PRODUCTS, formatINR } from "@/lib/catalog";
 import { useShop } from "@/lib/shop-store";
+import { useTheme } from "@/components/theme-provider";
 
 const emptyAddress = {
   label: "Home",
@@ -30,6 +31,7 @@ function AccountPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { wishlist, recentlyViewed } = useShop();
+  const { theme, setTheme } = useTheme();
   const [draft, setDraft] = useState(emptyAddress);
   const [profileDraft, setProfileDraft] = useState<{ full_name: string; phone: string } | null>(null);
 
@@ -301,8 +303,9 @@ function AccountPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="profile" className="mt-8 max-w-md">
+        <TabsContent value="profile" className="mt-8 max-w-md space-y-8">
           <div className="rounded-md bg-card p-6 shadow-soft">
+            <p className="eyebrow mb-4">Personal Information</p>
             <div className="grid gap-4">
               <div>
                 <Label htmlFor="p-name" className="text-xs">
@@ -336,6 +339,33 @@ function AccountPage() {
             >
               Save changes
             </Button>
+          </div>
+
+          <div className="rounded-md bg-card p-6 shadow-soft">
+            <p className="eyebrow mb-4">Appearance</p>
+            <div className="grid grid-cols-3 gap-3">
+              <button
+                type="button"
+                onClick={() => setTheme("light")}
+                className={`flex flex-col items-center justify-center rounded-md border-2 p-3 transition-colors ${theme === 'light' ? 'border-primary bg-primary/5' : 'border-border hover:bg-accent/5'}`}
+              >
+                <span className="text-sm font-medium">Light</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme("dark")}
+                className={`flex flex-col items-center justify-center rounded-md border-2 p-3 transition-colors ${theme === 'dark' ? 'border-primary bg-primary/5' : 'border-border hover:bg-accent/5'}`}
+              >
+                <span className="text-sm font-medium">Dark</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme("system")}
+                className={`flex flex-col items-center justify-center rounded-md border-2 p-3 transition-colors ${theme === 'system' ? 'border-primary bg-primary/5' : 'border-border hover:bg-accent/5'}`}
+              >
+                <span className="text-sm font-medium">System</span>
+              </button>
+            </div>
           </div>
         </TabsContent>
       </Tabs>

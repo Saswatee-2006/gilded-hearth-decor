@@ -25,15 +25,37 @@ function AuthPage() {
   
   const [form, setForm] = useState({ name: "", email: "", password: "", phone: "", otp: "" });
 
+  const [showSuccess, setShowSuccess] = useState(false);
+
   useEffect(() => {
     if (user) {
-      if (search['returnTo']) {
-        navigate(search['returnTo'], { replace: true });
-      } else {
-        navigate("/account", { replace: true });
-      }
+      setShowSuccess(true);
+      const timer = setTimeout(() => {
+        if (search['returnTo']) {
+          navigate(search['returnTo'], { replace: true });
+        } else {
+          navigate("/", { replace: true });
+        }
+      }, 1800);
+      return () => clearTimeout(timer);
     }
   }, [user, navigate, search['returnTo']]);
+
+  if (showSuccess) {
+    return (
+      <div className="mx-auto w-full max-w-md px-4 pt-16 pb-16 md:pt-24 md:pb-24">
+        <div className="rounded-md bg-card p-10 shadow-soft text-center reveal-in">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <h1 className="font-display text-3xl">
+            Welcome back{user?.user_metadata?.full_name ? `, ${user.user_metadata.full_name}` : ''}
+          </h1>
+          <p className="mt-3 text-muted-foreground">You’re signed in and ready to shop.</p>
+        </div>
+      </div>
+    );
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -148,7 +170,7 @@ function AuthPage() {
   }
 
   return (
-    <div className="mx-auto grid max-w-md px-4 py-16 md:py-24">
+    <div className="mx-auto w-full max-w-md px-4 pt-2 pb-16 md:pt-4 md:pb-24">
       <div className="rounded-md bg-card p-8 shadow-soft">
         <p className="eyebrow bg-accent text-accent-foreground w-fit px-2 py-0.5 rounded-sm mb-4">WELCOME BACK</p>
         <h1 className="mt-2 font-display text-3xl">

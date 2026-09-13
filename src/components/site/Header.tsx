@@ -1,5 +1,17 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Heart, Menu, Search, ShoppingBag, User } from "lucide-react";
+import { 
+  Heart, 
+  Menu, 
+  Search, 
+  ShoppingBag, 
+  User, 
+  ChevronRight,
+  Home,
+  Store,
+  HelpCircle,
+  Mail,
+  Truck
+} from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { SearchDialog } from "@/components/site/SearchDialog";
@@ -16,7 +28,26 @@ export function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleMobileNav = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault();
+    if (isNavigating) return;
+    
+    setMenuOpen(false);
+    
+    // Only navigate if it's a different route
+    if (location.pathname !== href) {
+      setIsNavigating(true);
+      setTimeout(() => {
+        navigate(href);
+        setIsNavigating(false);
+      }, 300);
+    }
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -35,7 +66,7 @@ export function Header() {
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 md:h-20 md:px-8">
         {/* Mobile menu */}
-        <Sheet>
+        <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8 lg:hidden" aria-label="Open menu">
               <Menu className="h-5 w-5" />
@@ -45,37 +76,88 @@ export function Header() {
             <SheetHeader>
               <SheetTitle className="font-display text-2xl">Aarohan Décor</SheetTitle>
             </SheetHeader>
-            <nav className="mt-6 space-y-6">
-              <Link to="/shop" className="block text-base">
-                Shop All
-              </Link>
-              <Link to="/" className={cn("block text-base", location.pathname === "/" && "text-accent")}>
-                Home
-              </Link>
-              {NAV_GROUPS.map((g) => (
-                <div key={g.title}>
-                  <p className="eyebrow mb-2">{g.title}</p>
-                  <ul className="space-y-2">
-                    {g.items.map((it) => (
-                      <li key={g.title + it.slug}>
-                        <Link
-                          to={g.title === "Gifts" ? `/collection/${it.slug}` : `/category/${it.slug}`}
-                          className="text-sm text-muted-foreground"
-                        >
-                          {it.name}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+            <nav className="mt-8 flex flex-col pb-8">
+              <div className="flex flex-col py-2">
+                <p className="eyebrow mb-2 px-2 text-muted-foreground">Main Navigation</p>
+                <Link to="/" onClick={(e) => handleMobileNav(e, "/")} className={cn("flex items-center justify-between rounded-md px-2 py-3 transition-colors hover:bg-accent/50", location.pathname === "/" && "bg-accent/50 text-accent-foreground")}>
+                  <div className="flex items-center gap-3">
+                    <Home className="h-5 w-5" />
+                    <span className="text-base font-medium">Home</span>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </Link>
+                <Link to="/shop" onClick={(e) => handleMobileNav(e, "/shop")} className="flex items-center justify-between rounded-md px-2 py-3 transition-colors hover:bg-accent/50">
+                  <div className="flex items-center gap-3">
+                    <Store className="h-5 w-5" />
+                    <span className="text-base font-medium">Shop</span>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </Link>
+                <Link to="/cart" onClick={(e) => handleMobileNav(e, "/cart")} className="flex items-center justify-between rounded-md px-2 py-3 transition-colors hover:bg-accent/50">
+                  <div className="flex items-center gap-3">
+                    <ShoppingBag className="h-5 w-5" />
+                    <span className="text-base font-medium">Cart</span>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </Link>
+                <Link to="/wishlist" onClick={(e) => handleMobileNav(e, "/wishlist")} className="flex items-center justify-between rounded-md px-2 py-3 transition-colors hover:bg-accent/50">
+                  <div className="flex items-center gap-3">
+                    <Heart className="h-5 w-5" />
+                    <span className="text-base font-medium">Wishlist</span>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </Link>
+              </div>
+
+              <div className="my-2 h-px bg-border" />
+
+              <div className="flex flex-col py-2">
+                <p className="eyebrow mb-2 px-2 text-muted-foreground">Account</p>
+                <Link to={user ? "/account" : "/auth"} onClick={(e) => handleMobileNav(e, user ? "/account" : "/auth")} className="flex items-center justify-between rounded-md px-2 py-3 transition-colors hover:bg-accent/50">
+                  <div className="flex items-center gap-3">
+                    <User className="h-5 w-5" />
+                    <span className="text-base font-medium">{user ? "My Account" : "Login"}</span>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </Link>
+              </div>
+
+              <div className="my-2 h-px bg-border" />
+
+              <div className="flex flex-col py-2">
+                <p className="eyebrow mb-2 px-2 text-muted-foreground">Support</p>
+                <Link to="/faqs" onClick={(e) => handleMobileNav(e, "/faqs")} className="flex items-center justify-between rounded-md px-2 py-3 transition-colors hover:bg-accent/50">
+                  <div className="flex items-center gap-3">
+                    <HelpCircle className="h-5 w-5" />
+                    <span className="text-base font-medium">Help & Support</span>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </Link>
+                <Link to="/contact" onClick={(e) => handleMobileNav(e, "/contact")} className="flex items-center justify-between rounded-md px-2 py-3 transition-colors hover:bg-accent/50">
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-5 w-5" />
+                    <span className="text-base font-medium">Contact Us</span>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </Link>
+                <Link to="/track-order" onClick={(e) => handleMobileNav(e, "/track-order")} className="flex items-center justify-between rounded-md px-2 py-3 transition-colors hover:bg-accent/50">
+                  <div className="flex items-center gap-3">
+                    <Truck className="h-5 w-5" />
+                    <span className="text-base font-medium">Track Order</span>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </Link>
+              </div>
             </nav>
           </SheetContent>
         </Sheet>
 
-        <Link to="/" className="flex flex-col leading-none shrink-1 min-w-0">
-          <span className="font-display text-xl tracking-wide md:text-[28px] truncate">Aarohan</span>
-          <span className="eyebrow hidden md:block">Décor Atelier</span>
+        <Link to="/" className="flex items-center gap-2 md:gap-3 shrink-1 min-w-0">
+          <img src="/favicon.svg" alt="Aarohan Logo" className="h-7 w-7 md:h-9 md:w-9 object-contain shrink-0" />
+          <div className="flex flex-col leading-none shrink-1 min-w-0">
+            <span className="font-display text-xl tracking-wide md:text-[28px] truncate">Aarohan</span>
+            <span className="eyebrow hidden md:block">Décor Atelier</span>
+          </div>
         </Link>
 
         {/* Desktop nav */}

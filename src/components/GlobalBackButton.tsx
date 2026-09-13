@@ -11,10 +11,11 @@ export function GlobalBackButton() {
   }
 
   const handleBack = () => {
-    if (location.key === "default") {
-      navigate("/");
-    } else {
+    // Check if there is meaningful history within the app
+    if (window.history.length > 2) {
       navigate(-1);
+    } else {
+      navigate("/");
     }
   };
 
