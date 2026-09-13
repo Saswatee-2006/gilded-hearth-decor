@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { Footer } from "@/components/site/Footer";
 import { Header } from "@/components/site/Header";
@@ -77,6 +77,18 @@ function NotFoundComponent() {
 const queryClient = new QueryClient();
 
 export function App() {
+  useEffect(() => {
+    const splash = document.getElementById("aarohan-splash");
+    if (splash) {
+      // Small delay to ensure smooth transition right after mount
+      const timer = setTimeout(() => {
+        splash.classList.add("fade-out");
+        setTimeout(() => splash.remove(), 600);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   return (
     <ThemeProvider defaultTheme="light" storageKey="aarohan-theme">
       <QueryClientProvider client={queryClient}>

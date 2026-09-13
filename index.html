@@ -17,8 +17,73 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2" />
+    <style>
+      #aarohan-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background-color: #f7f6f1; /* Light mode bg fallback */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      /* Approximate dark mode if user has it set */
+      @media (prefers-color-scheme: dark) {
+        html:not(.light) #aarohan-splash {
+          background-color: #2b2b2b;
+        }
+      }
+      html.dark #aarohan-splash {
+        background-color: #2b2b2b;
+      }
+      
+      #aarohan-splash.fade-out {
+        opacity: 0;
+        visibility: hidden;
+      }
+      .splash-logo {
+        width: 56px;
+        height: 56px;
+        margin-bottom: 24px;
+        animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+      .splash-loader {
+        width: 120px;
+        height: 1px;
+        background-color: #e5e1d8;
+        position: relative;
+        overflow: hidden;
+      }
+      .splash-loader::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 40%;
+        background-color: #4a3c31;
+        animation: splash-slide 1.5s ease-in-out infinite;
+      }
+      html.dark .splash-loader { background-color: #444; }
+      html.dark .splash-loader::after { background-color: #bfa15f; }
+
+      @keyframes pulse-soft {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.8; transform: scale(0.98); }
+      }
+      @keyframes splash-slide {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(250%); }
+      }
+    </style>
   </head>
   <body>
+    <div id="aarohan-splash">
+      <img src="/favicon.svg" alt="Aarohan Décor" class="splash-logo" />
+      <div class="splash-loader"></div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
