@@ -71,8 +71,8 @@ function OrderDetailPage() {
       <div className="rounded-md bg-card p-6 shadow-soft md:p-8">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-6">
           <div>
-            <h1 className="font-display text-3xl">Order #{order.order_number}</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <h1 className="font-display text-4xl md:text-3xl">Order #{order.order_number}</h1>
+            <p className="mt-2 text-base md:text-sm text-muted-foreground">
               Placed on{" "}
               {new Date(order.created_at).toLocaleDateString("en-IN", {
                 day: "numeric",
@@ -123,7 +123,7 @@ function OrderDetailPage() {
                       <Icon className={cn("h-3 w-3 md:h-4 md:w-4", isPast && "text-accent-foreground")} />
                     </div>
                     <div className="mt-2 md:mt-3 w-full px-0.5">
-                      <p className={cn("text-[9px] sm:text-[11px] md:text-sm font-medium leading-[1.2]", isCompleted ? "text-foreground" : "text-muted-foreground")}>
+                      <p className={cn("text-[11px] sm:text-[12px] md:text-sm font-medium leading-[1.2]", isCompleted ? "text-foreground" : "text-muted-foreground")}>
                         {step.label}
                       </p>
                     </div>
@@ -139,7 +139,7 @@ function OrderDetailPage() {
             <h2 className="eyebrow mb-4">Items</h2>
             <ul className="space-y-4">
               {order.order_items.map((item: any) => (
-                <li key={item.id} className="flex justify-between gap-4 text-sm">
+                <li key={item.id} className="flex justify-between gap-4 text-base md:text-sm">
                   <span>
                     {item.name} × {item.qty}
                   </span>
@@ -151,19 +151,34 @@ function OrderDetailPage() {
           <div className="space-y-6">
             <div>
               <h2 className="eyebrow mb-2">Delivery Address</h2>
-              <div className="text-sm text-muted-foreground">
-                <p className="text-foreground font-medium">{order.address?.name}</p>
-                <p>{order.address?.line1}</p>
-                {order.address?.line2 && <p>{order.address.line2}</p>}
-                <p>
-                  {order.address?.city}, {order.address?.state} {order.address?.pincode}
-                </p>
-                <p className="mt-2">Phone: {order.address?.mobile}</p>
+              <div className="text-base md:text-sm text-muted-foreground">
+                {(() => {
+                  const addr = order.shipping_address;
+                  if (!addr) return <p>No delivery address provided.</p>;
+                  return (
+                    <>
+                      {addr.name && <p className="text-foreground font-medium">{addr.name}</p>}
+                      {addr.line1 && <p>{addr.line1}</p>}
+                      {addr.line2 && <p>{addr.line2}</p>}
+                      {(addr.city || addr.state || addr.pincode) && (
+                        <p>
+                          {[addr.city, addr.state].filter(Boolean).join(", ")}
+                          {addr.pincode ? ` - ${addr.pincode}` : ""}
+                        </p>
+                      )}
+                      {addr.mobile && (
+                        <p className="mt-2">
+                          Phone: {addr.mobile.startsWith("+") ? addr.mobile : `+91 ${addr.mobile}`}
+                        </p>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
             <div>
               <h2 className="eyebrow mb-2">Summary</h2>
-              <dl className="space-y-1 text-sm">
+              <dl className="space-y-2 md:space-y-1 text-base md:text-sm">
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Subtotal</dt>
                   <dd>{formatINR(order.subtotal)}</dd>
