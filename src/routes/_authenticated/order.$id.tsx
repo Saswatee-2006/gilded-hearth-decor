@@ -93,7 +93,7 @@ function OrderDetailPage() {
         <div className="py-10">
           <h2 className="eyebrow mb-8">Order Status</h2>
           <div className="relative">
-            <div className="flex flex-col gap-8 md:flex-row md:justify-between md:gap-4 relative z-0">
+            <div className="flex flex-row justify-between w-full gap-1 sm:gap-2 md:gap-4 relative z-0">
               {TIMELINE_STEPS.map((step, i) => {
                 const isPast = i < currentStepIndex;
                 const isCurrent = i === currentStepIndex;
@@ -101,39 +101,29 @@ function OrderDetailPage() {
                 const Icon = isCompleted ? step.icon : Circle;
 
                 return (
-                  <div key={step.id} className="relative flex items-center gap-4 md:flex-col md:text-center md:flex-1">
-                    {/* Horizontal Line (Desktop) */}
+                  <div key={step.id} className="relative flex flex-col items-center flex-1 text-center">
+                    {/* Horizontal Line */}
                     {i < TIMELINE_STEPS.length - 1 && (
                       <div
                         className={cn(
-                          "absolute hidden md:block h-[2px] w-full left-[50%] top-[15px] -z-10",
+                          "absolute h-[2px] w-full left-[50%] top-[11px] md:top-[15px] -z-10",
                           isCompleted ? "bg-accent" : "bg-secondary"
                         )}
-                      />
-                    )}
-                    {/* Vertical Line (Mobile) */}
-                    {i < TIMELINE_STEPS.length - 1 && (
-                      <div
-                        className={cn(
-                          "absolute md:hidden w-[2px] left-[15px] top-[15px] -z-10",
-                          isCompleted ? "bg-accent" : "bg-secondary"
-                        )}
-                        style={{ height: "calc(100% + 2rem)" }}
                       />
                     )}
 
                     <div
                       className={cn(
-                        "flex h-8 w-8 items-center justify-center rounded-full z-10 transition-colors",
+                        "flex h-6 w-6 md:h-8 md:w-8 items-center justify-center rounded-full z-10 transition-colors shrink-0",
                         isPast ? "bg-accent text-accent-foreground" : 
-                        isCurrent ? "bg-card border-2 border-accent text-accent shadow-[0_0_0_4px_hsl(var(--accent)/0.2)]" : 
+                        isCurrent ? "bg-card border-2 border-accent text-accent shadow-[0_0_0_3px_hsl(var(--accent)/0.2)] md:shadow-[0_0_0_4px_hsl(var(--accent)/0.2)]" : 
                         "bg-card border-2 border-muted text-muted-foreground"
                       )}
                     >
-                      <Icon className={cn("h-4 w-4", isPast && "text-accent-foreground")} />
+                      <Icon className={cn("h-3 w-3 md:h-4 md:w-4", isPast && "text-accent-foreground")} />
                     </div>
-                    <div>
-                      <p className={cn("text-sm font-medium", isCompleted ? "text-foreground" : "text-muted-foreground")}>
+                    <div className="mt-2 md:mt-3 w-full px-0.5">
+                      <p className={cn("text-[9px] sm:text-[11px] md:text-sm font-medium leading-[1.2]", isCompleted ? "text-foreground" : "text-muted-foreground")}>
                         {step.label}
                       </p>
                     </div>

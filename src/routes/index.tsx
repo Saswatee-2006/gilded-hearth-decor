@@ -12,7 +12,7 @@ const featured = PRODUCTS.filter((p) => p.badges.includes("featured")).slice(0, 
 const bestsellers = PRODUCTS.filter((p) => p.badges.includes("bestseller")).slice(0, 4);
 const newArrivals = PRODUCTS.filter((p) => p.badges.includes("new")).slice(0, 4);
 const wallArt = PRODUCTS.filter((p) =>
-  ["posters", "canvas-art", "abstract-art", "wall-decor", "wall-hangings", "stone-art"].includes(
+  ["posters", "canvas-art", "abstract-art", "wall-decor", "wall-hangings"].includes(
     p.category,
   ),
 ).slice(0, 7);
@@ -55,58 +55,60 @@ function SectionHead({
 function Home() {
   return (
     <>
-      {/* HERO */}
-      <section className="relative">
-        <img
-          src={hero}
-          alt="Warm neutral living room styled with abstract canvas art, a wooden wall clock and ceramic vases"
-          width={1920}
-          height={1088}
-          className="h-[78vh] min-h-[520px] w-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-ink/85 via-ink/60 to-ink/25" />
-        <div className="absolute inset-0 flex items-center">
-          <div className="mx-auto w-full max-w-7xl px-4 md:px-8">
-            <Reveal className="max-w-xl text-primary-foreground">
-              <p className="eyebrow text-primary-foreground/80">Aarohan Décor · Est. 2026</p>
-              <h1 className="mt-4 font-display text-5xl leading-[1.05] md:text-7xl">
-                Make Your Space Beautiful.
-              </h1>
-              <p className="mt-5 max-w-md text-sm leading-relaxed text-primary-foreground/85 md:text-base">
-                Thoughtfully designed décor that turns everyday spaces into something extraordinary.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Button size="lg" variant="hero" asChild>
-                  <Link to="/shop">Shop Décor</Link>
-                </Button>
-                <Button size="lg" variant="heroOutline" asChild>
-                  <Link to="/collection/luxury-decor">
-                    Explore Collections
-                  </Link>
-                </Button>
-              </div>
-            </Reveal>
+      <div className="flex flex-col min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-5rem)]">
+        {/* HERO */}
+        <section className="relative flex flex-1 flex-col">
+          <img
+            src={hero}
+            alt="Warm neutral living room styled with abstract canvas art, a wooden wall clock and ceramic vases"
+            width={1920}
+            height={1088}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-ink/85 via-ink/60 to-ink/25" />
+          <div className="relative flex flex-1 items-center">
+            <div className="mx-auto w-full max-w-7xl px-4 md:px-8 py-12 md:py-20">
+              <Reveal className="max-w-xl text-primary-foreground">
+                <p className="eyebrow text-primary-foreground/80">Aarohan Décor · Est. 2026</p>
+                <h1 className="mt-4 font-display text-5xl leading-[1.05] md:text-7xl">
+                  Make Your Space Beautiful.
+                </h1>
+                <p className="mt-5 max-w-md text-sm leading-relaxed text-primary-foreground/85 md:text-base">
+                  Thoughtfully designed décor that turns everyday spaces into something extraordinary.
+                </p>
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <Button size="lg" variant="hero" asChild>
+                    <Link to="/shop">Shop Décor</Link>
+                  </Button>
+                  <Button size="lg" variant="heroOutline" asChild>
+                    <Link to="/collection/luxury-decor">
+                      Explore Collections
+                    </Link>
+                  </Button>
+                </div>
+              </Reveal>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* TRUST STRIP */}
-      <section className="border-b bg-card">
-        <ul className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-10 gap-y-3 px-4 py-5 text-xs text-muted-foreground md:px-8">
-          {[
-            { icon: ShieldCheck, label: "Quality Checked" },
-            { icon: Sparkles, label: "Secure Payments" },
-            { icon: PackageCheck, label: "Carefully Packed" },
-            { icon: RotateCcw, label: "Easy Returns" },
-            { icon: Truck, label: "Free Delivery above ₹999" },
-          ].map(({ icon: Icon, label }) => (
-            <li key={label} className="flex items-center gap-2">
-              <Icon className="h-4 w-4 text-accent" />
-              {label}
-            </li>
-          ))}
-        </ul>
-      </section>
+        {/* TRUST STRIP */}
+        <section className="border-b bg-card shrink-0">
+          <ul className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-10 gap-y-3 px-4 py-5 text-xs text-muted-foreground md:px-8">
+            {[
+              { icon: ShieldCheck, label: "Quality Checked" },
+              { icon: Sparkles, label: "Secure Payments" },
+              { icon: PackageCheck, label: "Carefully Packed" },
+              { icon: RotateCcw, label: "Easy Returns" },
+              { icon: Truck, label: "Free Delivery above ₹999" },
+            ].map(({ icon: Icon, label }) => (
+              <li key={label} className="flex items-center gap-2">
+                <Icon className="h-4 w-4 text-accent" />
+                {label}
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
 
       {/* CATEGORIES */}
       <section className="mx-auto max-w-7xl px-4 py-20 md:px-8">

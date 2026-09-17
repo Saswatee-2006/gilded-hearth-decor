@@ -75,25 +75,47 @@ function NotFoundComponent() {
   );
 }
 
+import { useAuth } from "@/lib/auth";
+
+function SplashHandler() {
+  const { loading } = useAuth();
+  
+  useEffect(() => {
+    if (!loading) {
+      const splash = document.getElementById("aarohan-splash");
+      if (splash && !splash.classList.contains("fade-out")) {
+        // Hide splash screen smoothly once critical data (like auth) is loaded
+        splash.classList.add("fade-out");
+        setTimeout(() => splash.remove(), 800);
+      }
+    }
+  }, [loading]);
+
+  return null;
+}
+
 const queryClient = new QueryClient();
 
 export function App() {
+  // Ensure the splash screen has an absolute maximum fail-safe timeout 
+  // in case something outside React blocks initialization indefinitely.
+  // This satisfies the requirement that it "cannot remain stuck indefinitely".
   useEffect(() => {
-    const splash = document.getElementById("aarohan-splash");
-    if (splash) {
-      // Ensure the premium loading animations have time to complete gracefully
-      const timer = setTimeout(() => {
+    const fallbackTimer = setTimeout(() => {
+      const splash = document.getElementById("aarohan-splash");
+      if (splash && !splash.classList.contains("fade-out")) {
         splash.classList.add("fade-out");
         setTimeout(() => splash.remove(), 800);
-      }, 2200);
-      return () => clearTimeout(timer);
-    }
+      }
+    }, 4000); // Only a safety net, normal load will trigger SplashHandler instantly
+    return () => clearTimeout(fallbackTimer);
   }, []);
 
   return (
     <ThemeProvider defaultTheme="light" storageKey="aarohan-theme">
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
+          <SplashHandler />
           <ShopProvider>
             <BrowserRouter>
               <ScrollToTop />
