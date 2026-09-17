@@ -78,18 +78,19 @@ function NotFoundComponent() {
 import { useAuth } from "@/lib/auth";
 
 function SplashHandler() {
-  const { loading } = useAuth();
-  
   useEffect(() => {
-    if (!loading) {
+    // Enforce a strict visual intro duration of 1.8s (1.5 - 2s target)
+    // without waiting for API calls or assets
+    const timer = setTimeout(() => {
       const splash = document.getElementById("aarohan-splash");
       if (splash && !splash.classList.contains("fade-out")) {
-        // Hide splash screen smoothly once critical data (like auth) is loaded
         splash.classList.add("fade-out");
         setTimeout(() => splash.remove(), 800);
       }
-    }
-  }, [loading]);
+    }, 1800);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   return null;
 }
@@ -107,7 +108,7 @@ export function App() {
         splash.classList.add("fade-out");
         setTimeout(() => splash.remove(), 800);
       }
-    }, 4000); // Only a safety net, normal load will trigger SplashHandler instantly
+    }, 5000); // Safety net: max time before forcing splash screen to hide
     return () => clearTimeout(fallbackTimer);
   }, []);
 

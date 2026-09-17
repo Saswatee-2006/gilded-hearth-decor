@@ -57,56 +57,74 @@ function Home() {
     <>
       <div className="flex flex-col min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-5rem)]">
         {/* HERO */}
-        <section className="relative flex flex-1 flex-col">
-          <img
-            src={hero}
-            alt="Warm neutral living room styled with abstract canvas art, a wooden wall clock and ceramic vases"
-            width={1920}
-            height={1088}
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-ink/85 via-ink/60 to-ink/25" />
-          <div className="relative flex flex-1 items-center">
-            <div className="mx-auto w-full max-w-7xl px-4 md:px-8 py-12 md:py-20">
-              <Reveal className="max-w-xl text-primary-foreground">
-                <p className="eyebrow text-primary-foreground/80">Aarohan Décor · Est. 2026</p>
-                <h1 className="mt-4 font-display text-5xl leading-[1.05] md:text-7xl">
-                  Make Your Space Beautiful.
-                </h1>
-                <p className="mt-5 max-w-md text-sm leading-relaxed text-primary-foreground/85 md:text-base">
-                  Thoughtfully designed décor that turns everyday spaces into something extraordinary.
-                </p>
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <Button size="lg" variant="hero" asChild>
-                    <Link to="/shop">Shop Décor</Link>
-                  </Button>
-                  <Button size="lg" variant="heroOutline" asChild>
-                    <Link to="/collection/luxury-decor">
-                      Explore Collections
-                    </Link>
-                  </Button>
-                </div>
-              </Reveal>
+        {/* HERO */}
+        <section className="relative flex flex-1 flex-col lg:flex-row bg-[#F7F4F0] overflow-hidden">
+          {/* LEFT: Content (40%) */}
+          <div className="relative z-10 flex w-full flex-col justify-center px-6 py-12 lg:w-[40%] lg:px-16 xl:px-24 lg:py-0 shrink-0">
+            <Reveal>
+              <p className="eyebrow tracking-[0.3em] text-[#8C7764] font-medium">ELEVATE EVERYDAY LIVING</p>
+              
+              <h1 className="mt-8 font-display text-[2.75rem] leading-[1.1] md:text-5xl lg:text-[3.25rem] xl:text-[3.75rem] lg:leading-[1.1] text-ink">
+                Timeless Décor<br />
+                for a More<br />
+                <i className="text-[#8C7764] italic">Beautiful You</i>
+              </h1>
+              
+              <div className="mt-8 h-[1px] w-12 bg-[#8C7764]/70" />
+              
+              <p className="mt-8 max-w-[320px] text-[15px] leading-relaxed text-muted-foreground">
+                Curated home décor pieces that blend artistry, functionality and timeless design.
+              </p>
+              
+              <div className="mt-10 flex flex-wrap gap-4 items-center">
+                <Button size="lg" className="bg-[#8C7764] hover:bg-[#786350] text-white px-8 h-12 text-[13px] tracking-wide font-medium transition-colors rounded-none" asChild>
+                  <Link to="/shop">Shop Décor <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                </Button>
+                <Button size="lg" variant="outline" className="border-ink/20 text-ink hover:bg-ink/5 px-8 h-12 text-[13px] tracking-wide font-medium transition-colors bg-transparent rounded-none" asChild>
+                  <Link to="/collection/luxury-decor">Explore Collections</Link>
+                </Button>
+              </div>
+            </Reveal>
+          </div>
+
+          {/* RIGHT: Image (60%) */}
+          <div className="relative w-full flex-1 lg:h-auto min-h-[50vh] lg:min-h-0 z-0">
+            {/* The subtle warm brown/taupe accent area/shape along the curved transition */}
+            {/* Offset to the left slightly to peek out from behind the image */}
+            <div className="absolute inset-y-0 right-0 left-[-3vw] bg-[#E2D5C4] lg:rounded-tl-[22vw] pointer-events-none hidden lg:block" />
+
+            {/* The Image Container with the Arch Cutout */}
+            <div className="relative h-full w-full overflow-hidden bg-muted lg:rounded-tl-[22vw] z-10">
+              <img
+                src={hero}
+                alt="Warm neutral living room styled with abstract canvas art, a wooden wall clock and ceramic vases"
+                className="h-full w-full object-cover object-[center_right]"
+              />
             </div>
           </div>
         </section>
 
         {/* TRUST STRIP */}
         <section className="border-b bg-card shrink-0">
-          <ul className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-10 gap-y-3 px-4 py-5 text-xs text-muted-foreground md:px-8">
-            {[
-              { icon: ShieldCheck, label: "Quality Checked" },
-              { icon: Sparkles, label: "Secure Payments" },
-              { icon: PackageCheck, label: "Carefully Packed" },
-              { icon: RotateCcw, label: "Easy Returns" },
-              { icon: Truck, label: "Free Delivery above ₹999" },
-            ].map(({ icon: Icon, label }) => (
-              <li key={label} className="flex items-center gap-2">
-                <Icon className="h-4 w-4 text-accent" />
-                {label}
-              </li>
-            ))}
-          </ul>
+          <div className="mx-auto flex max-w-7xl flex-col lg:flex-row items-center justify-between px-4 py-5 md:px-8 gap-6">
+            <ul className="flex flex-wrap items-center justify-center lg:justify-start gap-x-10 gap-y-3 text-xs text-muted-foreground">
+              {[
+                { icon: ShieldCheck, label: "Quality Checked" },
+                { icon: Sparkles, label: "Secure Payments" },
+                { icon: PackageCheck, label: "Carefully Packed" },
+                { icon: RotateCcw, label: "Easy Returns" },
+                { icon: Truck, label: "Free Delivery above ₹999" },
+              ].map(({ icon: Icon, label }) => (
+                <li key={label} className="flex items-center gap-2">
+                  <Icon className="h-4 w-4 text-accent" />
+                  {label}
+                </li>
+              ))}
+            </ul>
+            <div className="text-[10px] tracking-[0.25em] text-[#8C7764] uppercase font-medium text-center lg:text-right leading-[1.6]">
+              Made with Love<br />Handle with Care
+            </div>
+          </div>
         </section>
       </div>
 
