@@ -1,8 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
-import { Trash2, Heart, LogOut, Edit2, Package, ChevronRight, ShoppingBag, Truck, CheckCircle2, XCircle } from "lucide-react";
-import { useState } from "react";
+import { Trash2, Heart, LogOut, Edit2, Package, ChevronRight, ShoppingBag, Truck, CheckCircle2, XCircle, ChevronDown } from "lucide-react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { ProductCard } from "@/components/site/ProductCard";
 import { Button } from "@/components/ui/button";
@@ -26,12 +33,20 @@ const emptyAddress = {
 };
 
 function AccountPage() {
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, isAdmin, signOut, loading } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { wishlist, recentlyViewed } = useShop();
   const [draft, setDraft] = useState(emptyAddress);
   const [profileDraft, setProfileDraft] = useState<{ full_name: string; phone: string } | null>(null);
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/", { replace: true });
+    }
+  }, [user, loading, navigate]);
+
+  if (!loading && !user) return null;
 
   const saved = PRODUCTS.filter((p) => wishlist.includes(p.id));
   const viewed = recentlyViewed
@@ -297,7 +312,7 @@ function AccountPage() {
                 await queryClient.cancelQueries();
                 queryClient.clear();
                 await signOut();
-                navigate({ to: "/auth", replace: true });
+                navigate("/", { replace: true });
               }}
               className="group flex w-full items-center justify-between rounded-xl bg-card p-4 shadow-soft border border-border/50 transition-all hover:border-red-200 hover:bg-red-50 dark:hover:border-red-900/50 dark:hover:bg-red-950/20"
             >
@@ -356,87 +371,92 @@ function AccountPage() {
                 <h3 className="font-display text-2xl">My Orders</h3>
                 <p className="mt-1 text-sm text-muted-foreground">View and manage your order history.</p>
               </div>
-            </div>
-
-            {/* Status Filters */}
-            <div className="mb-8 flex overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 hide-scrollbar">
-              <div className="flex gap-2">
-                {["All", "Processing", "Confirmed", "Shipped", "Cancelled"].map(status => (
-                  <button
-                    key={status}
-                    onClick={() => setOrderFilter(status)}
-                    className={cn(
-                      "whitespace-nowrap rounded-full px-5 py-2 text-sm font-medium transition-colors border",
-                      orderFilter === status 
-                        ? "bg-foreground text-background border-foreground" 
-                        : "bg-transparent text-muted-foreground border-border/60 hover:border-foreground/30 hover:text-foreground"
-                    )}
-                  >
-                    {status}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Order List */}
-            {ordersQuery.isLoading ? (
-              <div className="py-12 text-center text-sm text-muted-foreground">Loading your orders…</div>
-            ) : displayedOrders.length === 0 ? (
-              <div className="rounded-xl border border-dashed p-12 text-center">
-                <Package className="mx-auto h-12 w-12 text-muted-foreground/30 mb-4" />
-                <p className="font-display text-xl mb-1">No orders found</p>
-                <p className="text-sm text-muted-foreground mb-6">You don't have any orders matching this status.</p>
-                {orderFilter === "All" && (
-                  <Button asChild>
-                    <Link to="/shop">Start Shopping</Link>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full sm:w-auto justify-between gap-2 border-border/60 bg-transparent hover:bg-accent/5">
+                    Order Status: <span className="font-medium text-foreground">{orderFilter}</span>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
                   </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                  {["All", "Processing", "Confirmed", "Shipped", "Cancelled"].map(status => (
+                    <DropdownMenuItem 
+                      key={status}
+                      onClick={() => setOrderFilter(status)}
+                      className={cn("cursor-pointer rounded-lg", orderFilter === status && "bg-accent/10 font-medium text-foreground")}
+                    >
+                      {status}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            <div className="flex flex-col gap-8 items-start">
+              
+              {/* Order List */}
+              <div className="w-full">
+                {ordersQuery.isLoading ? (
+                  <div className="py-12 text-center text-sm text-muted-foreground">Loading your orders…</div>
+                ) : displayedOrders.length === 0 ? (
+                  <div className="rounded-xl border border-dashed p-12 text-center">
+                    <Package className="mx-auto h-12 w-12 text-muted-foreground/30 mb-4" />
+                    <p className="font-display text-xl mb-1">No orders found</p>
+                    <p className="text-sm text-muted-foreground mb-6">You don't have any orders matching this status.</p>
+                    {orderFilter === "All" && (
+                      <Button asChild>
+                        <Link to="/shop">Start Shopping</Link>
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <ul className="space-y-4">
+                    {displayedOrders.map((o) => (
+                      <li key={o.id}>
+                        <div className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-border/60 p-5 transition-colors hover:border-border hover:bg-accent/5">
+                          <div className="flex items-start gap-4">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-accent/20">
+                              <Package className="h-6 w-6 text-accent-foreground/70" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-3">
+                                <p className="font-medium">Order #{o.order_number}</p>
+                                <span className={cn(
+                                  "rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
+                                  o.status === "delivered" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
+                                  o.status === "cancelled" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
+                                  "bg-accent/30 text-accent-foreground"
+                                )}>
+                                  {o.status}
+                                </span>
+                              </div>
+                              <p className="mt-1 text-sm text-muted-foreground">
+                                {new Date(o.created_at).toLocaleDateString("en-IN", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                })}
+                              </p>
+                              <p className="mt-2 text-sm text-muted-foreground line-clamp-1">
+                                {o.order_items.map((item: any) => `${item.name} × ${item.qty}`).join(", ")}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between sm:flex-col sm:items-end sm:justify-center gap-3 shrink-0">
+                            <p className="font-medium text-lg">{formatINR(o.total)}</p>
+                            <Button variant="outline" size="sm" className="rounded-full" asChild>
+                              <Link to={`/order/${o.id}`}>View Order</Link>
+                            </Button>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </div>
-            ) : (
-              <ul className="space-y-4">
-                {displayedOrders.map((o) => (
-                  <li key={o.id}>
-                    <div className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-border/60 p-5 transition-colors hover:border-border hover:bg-accent/5">
-                      <div className="flex items-start gap-4">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-accent/20">
-                          <Package className="h-6 w-6 text-accent-foreground/70" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-3">
-                            <p className="font-medium">Order #{o.order_number}</p>
-                            <span className={cn(
-                              "rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
-                              o.status === "delivered" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
-                              o.status === "cancelled" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
-                              "bg-accent/30 text-accent-foreground"
-                            )}>
-                              {o.status}
-                            </span>
-                          </div>
-                          <p className="mt-1 text-sm text-muted-foreground">
-                            {new Date(o.created_at).toLocaleDateString("en-IN", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            })}
-                          </p>
-                          <p className="mt-2 text-sm text-muted-foreground line-clamp-1">
-                            {o.order_items.map((item: any) => `${item.name} × ${item.qty}`).join(", ")}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-between sm:flex-col sm:items-end sm:justify-center gap-3 shrink-0">
-                        <p className="font-medium text-lg">{formatINR(o.total)}</p>
-                        <Button variant="outline" size="sm" className="rounded-full" asChild>
-                          <Link to={`/order/${o.id}`}>View Order</Link>
-                        </Button>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
+            </div>
           </div>
         </div>
       </div>

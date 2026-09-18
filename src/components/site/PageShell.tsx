@@ -12,7 +12,7 @@ export function PageShell({
   children: ReactNode;
 }) {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-16 md:px-8 md:py-24">
+    <div className="mx-auto max-w-3xl px-4 py-6 md:py-10 md:px-8 md:py-6 md:py-10">
       <p className="eyebrow">{eyebrow}</p>
       <h1 className="mt-3 font-display text-4xl md:text-5xl">{title}</h1>
       {intro && <p className="mt-4 text-muted-foreground">{intro}</p>}

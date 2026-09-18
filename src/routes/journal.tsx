@@ -17,7 +17,7 @@ function JournalPage() {
       </section>
 
       {/* ARTICLE GRID */}
-      <section className="mt-20">
+      <section className="mt-12">
         <div className="grid gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
           {ARTICLES.map((article) => (
             <div key={article.id} className="group flex flex-col h-full">

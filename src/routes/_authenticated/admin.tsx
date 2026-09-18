@@ -69,11 +69,11 @@ function AdminPage() {
     },
   });
 
-  if (loading) return <div className="px-4 py-24 text-center text-sm">Checking access…</div>;
+  if (loading) return <div className="px-4 py-6 md:py-10 text-center text-sm">Checking access…</div>;
 
   if (!isAdmin) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-24 text-center">
+      <div className="mx-auto max-w-lg px-4 py-6 md:py-10 text-center">
         <h1 className="font-display text-3xl">Admins only</h1>
         <p className="mt-3 text-sm text-muted-foreground">
           This area is reserved for the store team. If you should have access, ask an existing admin

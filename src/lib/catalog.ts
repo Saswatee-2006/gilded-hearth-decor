@@ -1188,3 +1188,28 @@ export const FILTER_OPTIONS = {
   colors: Array.from(new Set(PRODUCTS.map((p) => p.color))).sort(),
   sizes: Array.from(new Set(PRODUCTS.map((p) => p.size))).sort(),
 };
+
+
+export function getProductPrice(product: Product, size?: string): number {
+  const isA4A5 = product.category === "posters" || product.name === "Golden Swirl Resin Wall Art";
+  const isXLXXL = product.category === "wall-clocks" || product.category === "wall-decor";
+  
+  if (!size) {
+    if (isA4A5) size = "A4";
+    else if (isXLXXL) size = "XL";
+  }
+
+  if (size === "A5" || size === "XL") {
+    if (product.price <= 249) return 199;
+    if (product.price <= 269) return 219;
+    if (product.price <= 289) return 249;
+    return 269;
+  } else if (size === "A4" || size === "XXL") {
+    if (product.price <= 249) return 249;
+    if (product.price <= 269) return 269;
+    if (product.price <= 289) return 289;
+    return 299;
+  }
+
+  return product.price;
+}

@@ -37,9 +37,9 @@ const COLUMNS = [
 
 export function Footer() {
   return (
-    <footer className="mt-24 border-t bg-secondary/60">
-      <div className="mx-auto max-w-7xl px-4 py-16 md:px-8">
-        <div className="grid gap-12 lg:grid-cols-[1.4fr_repeat(3,1fr)]">
+    <footer className="border-t bg-secondary/60">
+      <div className="mx-auto max-w-7xl px-4 pt-10 pb-4 md:px-8">
+        <div className="grid gap-6 lg:grid-cols-[1.4fr_repeat(3,1fr)]">
           <div className="max-w-sm">
             <p className="font-display text-3xl">Bring More Beauty Home.</p>
             <p className="mt-3 text-sm text-muted-foreground">
@@ -90,8 +90,8 @@ export function Footer() {
           ))}
         </div>
 
-        <div className="mt-14 flex flex-col gap-4 border-t pt-6 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between">
-          <p>© {new Date().getFullYear()} Aarohan Décor. Handpicked in India.</p>
+        <div className="mt-6 flex flex-col gap-4 border-t pt-5 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between">
+          <p>© {new Date().getFullYear()} Aarohan Décor. Associated under Mavros Tech Pvt. Ltd.</p>
           <div className="flex flex-wrap gap-4">
             <Link to="/policies" className="link-underline">Privacy Policy</Link>
             <Link to="/policies" className="link-underline">Terms &amp; Conditions</Link>

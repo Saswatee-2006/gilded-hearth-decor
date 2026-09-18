@@ -29,7 +29,7 @@ function SectionHead({
   action?: { label: string; to: string; slug?: string };
 }) {
   return (
-    <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
+    <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div className="max-w-xl">
         {eyebrow && <p className="eyebrow">{eyebrow}</p>}
         <h2 className="mt-2 font-display text-3xl md:text-[40px]">{title}</h2>
@@ -55,12 +55,12 @@ function SectionHead({
 function Home() {
   return (
     <>
-      <div className="flex flex-col min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-5rem)]">
+      <div className="flex flex-col">
         {/* HERO */}
         {/* HERO */}
-        <section className="relative flex flex-1 flex-col lg:flex-row bg-[#F7F4F0] overflow-hidden">
+        <section className="relative flex flex-col lg:flex-row bg-transparent lg:bg-[#F7F4F0] overflow-hidden">
           {/* LEFT: Content (40%) */}
-          <div className="relative z-10 flex w-full flex-col justify-center px-6 py-12 lg:w-[40%] lg:px-16 xl:px-24 lg:py-0 shrink-0">
+          <div className="relative z-10 flex w-full flex-col justify-start pt-12 pb-8 px-6 lg:justify-center lg:w-[40%] lg:px-16 xl:px-24 lg:py-24 shrink-0 bg-[#F7F4F0]">
             <Reveal>
               <p className="eyebrow tracking-[0.3em] text-[#8C7764] font-medium">ELEVATE EVERYDAY LIVING</p>
               
@@ -76,11 +76,11 @@ function Home() {
                 Curated home décor pieces that blend artistry, functionality and timeless design.
               </p>
               
-              <div className="mt-10 flex flex-wrap gap-4 items-center">
-                <Button size="lg" className="bg-[#8C7764] hover:bg-[#786350] text-white px-8 h-12 text-[13px] tracking-wide font-medium transition-colors rounded-none" asChild>
+              <div className="mt-8 flex flex-col lg:flex-row gap-3 lg:gap-4 items-start lg:items-center">
+                <Button size="lg" className="bg-[#8C7764] hover:bg-[#786350] text-white px-8 h-12 text-[13px] tracking-wide font-medium transition-colors rounded-none w-[220px] lg:w-auto" asChild>
                   <Link to="/shop">Shop Décor <ArrowRight className="ml-2 h-4 w-4" /></Link>
                 </Button>
-                <Button size="lg" variant="outline" className="border-ink/20 text-ink hover:bg-ink/5 px-8 h-12 text-[13px] tracking-wide font-medium transition-colors bg-transparent rounded-none" asChild>
+                <Button size="lg" variant="outline" className="border-ink/20 text-ink hover:bg-ink/5 bg-transparent px-8 h-12 text-[13px] tracking-wide font-medium transition-colors rounded-none w-[220px] lg:w-auto" asChild>
                   <Link to="/collection/luxury-decor">Explore Collections</Link>
                 </Button>
               </div>
@@ -88,7 +88,7 @@ function Home() {
           </div>
 
           {/* RIGHT: Image (60%) */}
-          <div className="relative w-full flex-1 lg:h-auto min-h-[50vh] lg:min-h-0 z-0">
+          <div className="relative w-full h-[60vh] lg:absolute lg:inset-y-0 lg:right-0 lg:w-[60%] lg:h-full z-0">
             {/* The subtle warm brown/taupe accent area/shape along the curved transition */}
             {/* Offset to the left slightly to peek out from behind the image */}
             <div className="absolute inset-y-0 right-0 left-[-3vw] bg-[#E2D5C4] lg:rounded-tl-[22vw] pointer-events-none hidden lg:block" />
@@ -98,7 +98,7 @@ function Home() {
               <img
                 src={hero}
                 alt="Warm neutral living room styled with abstract canvas art, a wooden wall clock and ceramic vases"
-                className="h-full w-full object-cover object-[center_right]"
+                className="block h-full w-full object-cover object-[25%_center] lg:object-[center_right]"
               />
             </div>
           </div>
@@ -129,7 +129,7 @@ function Home() {
       </div>
 
       {/* CATEGORIES */}
-      <section className="mx-auto max-w-7xl px-4 py-20 md:px-8">
+      <section className="mx-auto max-w-7xl px-4 py-6 md:py-10 md:px-8">
         <SectionHead
           eyebrow="Browse"
           title="Shop by Category"
@@ -166,7 +166,7 @@ function Home() {
       </section>
 
       {/* FEATURED */}
-      <section className="bg-card py-20">
+      <section className="bg-card py-6 md:py-10">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
           <SectionHead
             eyebrow="Handpicked"
@@ -185,7 +185,7 @@ function Home() {
       </section>
 
       {/* STYLES */}
-      <section className="mx-auto max-w-7xl px-4 py-20 md:px-8">
+      <section className="mx-auto max-w-7xl px-4 py-6 md:py-10 md:px-8">
         <SectionHead eyebrow="Aesthetic" title="Find Your Style" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {STYLES.map((s, i) => (
@@ -213,7 +213,7 @@ function Home() {
       </section>
 
       {/* ROOMS */}
-      <section className="bg-secondary/50 py-20">
+      <section className="bg-secondary/50 py-6 md:py-10">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
           <SectionHead
             eyebrow="By space"
@@ -244,7 +244,7 @@ function Home() {
       </section>
 
       {/* WALL ART EDITORIAL */}
-      <section className="mx-auto max-w-7xl px-4 py-20 md:px-8">
+      <section className="mx-auto max-w-7xl px-4 py-6 md:py-10 md:px-8">
         <SectionHead
           eyebrow="Editorial"
           title="The Wall Art Edit"
@@ -274,7 +274,7 @@ function Home() {
       </section>
 
       {/* BESTSELLERS */}
-      <section className="bg-card py-20">
+      <section className="bg-card py-6 md:py-10">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
           <SectionHead
             eyebrow="Loved by 40,000+ homes"
@@ -335,7 +335,7 @@ function Home() {
       </section>
 
       {/* COLLECTIONS STRIP */}
-      <section className="bg-secondary/50 py-20">
+      <section className="bg-secondary/50 py-6 md:py-10">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
           <SectionHead eyebrow="Collections" title="Shop a Feeling" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -358,7 +358,7 @@ function Home() {
       </section>
 
       {/* STYLED BY YOU */}
-      <section className="mx-auto max-w-7xl px-4 py-20 md:px-8">
+      <section className="mx-auto max-w-7xl px-4 py-6 md:py-10 md:px-8">
         <SectionHead eyebrow="#AarohanHomes" title="Styled By You" copy="Follow our inspiration" />
         <div className="grid grid-cols-3 gap-2 md:grid-cols-6">
           {CATEGORIES.slice(0, 6).map((c) => (

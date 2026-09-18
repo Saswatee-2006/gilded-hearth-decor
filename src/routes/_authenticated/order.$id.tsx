@@ -36,7 +36,7 @@ function OrderDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-28 text-center">
+      <div className="mx-auto max-w-3xl px-4 py-6 md:py-10 text-center">
         <p className="text-sm text-muted-foreground">Loading order details...</p>
       </div>
     );
@@ -44,7 +44,7 @@ function OrderDetailPage() {
 
   if (!order) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-28 text-center">
+      <div className="mx-auto max-w-3xl px-4 py-6 md:py-10 text-center">
         <h1 className="font-display text-4xl">Order not found</h1>
         <Button className="mt-8" asChild>
           <Link to="/account">Back to Account</Link>

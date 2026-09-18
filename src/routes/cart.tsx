@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Heart, Minus, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { IMAGES, formatINR } from "@/lib/catalog";
+import { IMAGES, formatINR, getProductPrice } from "@/lib/catalog";
 import { FREE_SHIPPING_THRESHOLD, useShop } from "@/lib/shop-store";
 
 function CartPage() {
@@ -14,7 +14,7 @@ function CartPage() {
 
   if (cartProducts.length === 0) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-28 text-center">
+      <div className="mx-auto max-w-3xl px-4 py-6 md:py-10 text-center">
         <h1 className="font-display text-4xl">Your bag is empty</h1>
         <p className="mt-3 text-sm text-muted-foreground">
           Start with a wall clock, a vase or a piece of stone art.
@@ -53,7 +53,7 @@ function CartPage() {
                   </Link>
                 </h2>
                 <p className="mt-1 text-sm">
-                  {formatINR(product.price)}
+                  {formatINR(getProductPrice(product, size))}
                 </p>
 
                 <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -74,7 +74,7 @@ function CartPage() {
                   </Button>
                 </div>
               </div>
-              <p className="hidden w-24 text-right sm:block">{formatINR(product.price * qty)}</p>
+              <p className="hidden w-24 text-right sm:block">{formatINR(getProductPrice(product, size) * qty)}</p>
             </li>
           ))}
         </ul>

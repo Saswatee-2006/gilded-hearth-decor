@@ -26,7 +26,7 @@ function TrackOrderPage() {
   });
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-16 md:px-8">
+    <div className="mx-auto max-w-3xl px-4 py-6 md:py-10 md:px-8">
       <p className="eyebrow">Track order</p>
       <h1 className="mt-2 font-display text-4xl">Where's my order?</h1>
       <p className="mt-3 text-sm text-muted-foreground max-w-xl">

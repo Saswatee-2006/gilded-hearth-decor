@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/lib/auth";
-import { formatINR } from "@/lib/catalog";
+import { PRODUCTS, formatINR, getProductPrice } from "@/lib/catalog";
 import { saveOrder } from "@/lib/orders";
 import { FREE_SHIPPING_THRESHOLD, useShop, type Order } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
@@ -75,7 +75,7 @@ function CheckoutPage() {
 
   if (cartProducts.length === 0 && !order) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-28 text-center">
+      <div className="mx-auto max-w-3xl px-4 py-6 md:py-10 text-center">
         <h1 className="font-display text-4xl">Nothing to check out</h1>
         <Button className="mt-8" asChild>
           <Link to="/shop">Shop décor</Link>
@@ -86,7 +86,7 @@ function CheckoutPage() {
 
   if (order) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-24 text-center">
+      <div className="mx-auto max-w-2xl px-4 py-6 md:py-10 text-center">
         <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-accent text-accent-foreground">
           <Check className="h-6 w-6" />
         </span>
@@ -414,7 +414,7 @@ function CheckoutPage() {
                 }
                 
                 setSaving(true);
-                const lines = cartProducts.map(({ product, qty }) => ({ product, qty }));
+                const lines = cartProducts.map(({ product, qty, size }) => ({ product, qty, size }));
                 
                 let finalShippingAddress;
                 if (selectedAddressId !== "manual") {
@@ -476,7 +476,7 @@ function CheckoutPage() {
                 <span className="min-w-0 truncate">
                   {product.name} {size ? `(${size})` : ""} × {qty}
                 </span>
-                <span>{formatINR(product.price * qty)}</span>
+                <span>{formatINR(getProductPrice(product, size) * qty)}</span>
               </li>
             ))}
           </ul>

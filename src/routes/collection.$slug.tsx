@@ -10,7 +10,7 @@ function CollectionPage() {
 
   if (!collection) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-28 text-center">
+      <div className="mx-auto max-w-3xl px-4 py-6 md:py-10 text-center">
         <h1 className="font-display text-4xl">Collection not found</h1>
         <Link to="/shop" className="link-underline mt-4 inline-block text-sm text-accent">
           Browse all décor

@@ -1,17 +1,16 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 
 import { Footer } from "@/components/site/Footer";
 import { Header } from "@/components/site/Header";
-import { MobileTabBar } from "@/components/site/MobileTabBar";
-import { SearchDialog } from "@/components/site/SearchDialog";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
 import { ShopProvider } from "@/lib/shop-store";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { GlobalBackButton } from "@/components/GlobalBackButton";
 import { ThemeProvider } from "@/components/theme-provider";
+import { CartDrawer } from "@/components/site/CartDrawer";
 
 // Pages
 import IndexPage from "./routes/index";
@@ -37,18 +36,18 @@ import JournalPage from "./routes/journal";
 import ArticlePage from "./routes/journal.$slug";
 
 function SiteLayout() {
-  const [searchOpen, setSearchOpen] = useState(false);
+  const location = useLocation();
+  const isHomePage = location.pathname === "/";
+  
   return (
     <div className="flex min-h-screen flex-col w-full max-w-full">
       <Header />
-      <main className="flex-1 pb-16 lg:pb-0">
-        <GlobalBackButton />
+      <main className="flex-1">
         <Outlet />
       </main>
-      <Footer />
-      <MobileTabBar onSearch={() => setSearchOpen(true)} />
-      <SearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
-      <Toaster position="top-center" />
+      {isHomePage && <Footer />}
+      <CartDrawer />
+      <Toaster position="top-center" duration={1500} />
     </div>
   );
 }

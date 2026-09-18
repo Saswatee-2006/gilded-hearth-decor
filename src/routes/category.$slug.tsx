@@ -11,7 +11,7 @@ function CategoryPage() {
 
   if (!category) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-28 text-center">
+      <div className="mx-auto max-w-3xl px-4 py-6 md:py-10 text-center">
         <h1 className="font-display text-4xl">Category not found</h1>
         <Link to="/shop" className="link-underline mt-4 inline-block text-sm text-accent">
           Browse all décor
@@ -48,7 +48,7 @@ function CategoryPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-16 md:px-8">
+      <section className="mx-auto max-w-7xl px-4 py-6 md:py-10 md:px-8">
         {products.length === 0 ? (
           <p className="text-sm text-muted-foreground">New pieces are on their way to this category.</p>
         ) : (
@@ -59,7 +59,7 @@ function CategoryPage() {
           </div>
         )}
 
-        <div className="mt-20">
+        <div className="mt-12">
           <p className="eyebrow">Keep browsing</p>
           <div className="mt-4 flex flex-wrap gap-2">
             {siblings.map((c) => (

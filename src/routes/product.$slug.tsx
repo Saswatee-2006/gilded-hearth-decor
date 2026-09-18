@@ -11,6 +11,7 @@ import {
   completeTheLook,
   formatINR,
   getProduct,
+  getProductPrice,
   relatedProducts,
 } from "@/lib/catalog";
 import { useShop } from "@/lib/shop-store";
@@ -86,7 +87,7 @@ function ProductPage() {
           <h1 className="mt-2 font-display text-3xl md:text-5xl">{product.name}</h1>
 
           <div className="mt-5 flex flex-wrap items-baseline gap-3">
-            <span className="font-display text-4xl">{formatINR(product.price)}</span>
+            <span className="font-display text-4xl">{formatINR(getProductPrice(product, hasSize ? size : undefined))}</span>
           </div>
 
           <p className="mt-6 text-sm leading-relaxed text-muted-foreground">{product.description}</p>
@@ -201,7 +202,7 @@ function ProductPage() {
 
 
       {/* Recommendations */}
-      <section className="mt-24">
+      <section className="mt-10">
         <h2 className="font-display text-3xl">You May Also Like</h2>
         <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4">
           {relatedProducts(product).map((p) => (
@@ -210,7 +211,7 @@ function ProductPage() {
         </div>
       </section>
 
-      <section className="mt-20">
+      <section className="mt-12">
         <h2 className="font-display text-3xl">Complete the Look</h2>
         <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4">
           {completeTheLook(product).map((p) => (

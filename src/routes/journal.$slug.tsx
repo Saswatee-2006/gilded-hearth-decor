@@ -52,7 +52,7 @@ function ArticlePage() {
       </figure>
 
       {/* Content */}
-      <div className="mx-auto mt-16 max-w-2xl px-4 md:px-8 space-y-8 text-lg leading-relaxed text-foreground/85">
+      <div className="mx-auto mt-10 max-w-2xl px-4 md:px-8 space-y-8 text-lg leading-relaxed text-foreground/85">
         {article.content.map((block, i) => (
           <div key={i}>
             {block.heading && (
@@ -66,7 +66,7 @@ function ArticlePage() {
       </div>
 
       {/* Footer Back Link */}
-      <div className="mx-auto max-w-2xl mt-20 pt-10 border-t border-border flex justify-center">
+      <div className="mx-auto max-w-2xl mt-12 pt-10 border-t border-border flex justify-center">
         <Link
           to="/journal"
           className="inline-flex items-center text-sm font-medium uppercase tracking-widest text-foreground hover:text-primary transition-colors"
