@@ -60,27 +60,27 @@ function Home() {
         {/* HERO */}
         <section className="relative flex flex-col lg:flex-row bg-transparent lg:bg-[#F7F4F0] overflow-hidden">
           {/* LEFT: Content (40%) */}
-          <div className="relative z-10 flex w-full flex-col justify-start pt-12 pb-8 px-6 lg:justify-center lg:w-[40%] lg:px-16 xl:px-24 lg:py-24 shrink-0 bg-[#F7F4F0]">
+          <div className="relative z-10 flex w-full flex-col justify-start pt-12 pb-10 px-6 lg:justify-center lg:w-[40%] lg:px-16 xl:px-24 lg:py-16 shrink-0 bg-[#F7F4F0]">
             <Reveal>
               <p className="eyebrow tracking-[0.3em] text-[#8C7764] font-medium">ELEVATE EVERYDAY LIVING</p>
               
-              <h1 className="mt-8 font-display text-[2.75rem] leading-[1.1] md:text-5xl lg:text-[3.25rem] xl:text-[3.75rem] lg:leading-[1.1] text-ink">
+              <h1 className="mt-6 font-display text-[2.5rem] min-[400px]:text-[2.75rem] leading-[1.1] md:text-5xl lg:text-[3.25rem] xl:text-[3.75rem] lg:leading-[1.1] text-ink">
                 Timeless Décor<br />
                 for a More<br />
                 <i className="text-[#8C7764] italic">Beautiful You</i>
               </h1>
               
-              <div className="mt-8 h-[1px] w-12 bg-[#8C7764]/70" />
+              <div className="mt-6 h-[1px] w-12 bg-[#8C7764]/70" />
               
-              <p className="mt-8 max-w-[320px] text-[15px] leading-relaxed text-muted-foreground">
-                Curated home décor pieces that blend artistry, functionality and timeless design.
+              <p className="mt-6 max-w-[320px] text-[15px] leading-[1.6] text-muted-foreground/90 font-medium">
+                Thoughtfully chosen pieces that make every space feel like home.
               </p>
               
-              <div className="mt-8 flex flex-col lg:flex-row gap-3 lg:gap-4 items-start lg:items-center">
-                <Button size="lg" className="bg-[#8C7764] hover:bg-[#786350] text-white px-8 h-12 text-[13px] tracking-wide font-medium transition-colors rounded-none w-[220px] lg:w-auto" asChild>
+              <div className="mt-8 flex flex-col lg:flex-row gap-3 lg:gap-4 items-stretch lg:items-center">
+                <Button size="lg" className="bg-[#8C7764] hover:bg-[#786350] text-white px-8 h-12 text-[13px] tracking-wide font-medium transition-colors rounded-none w-full lg:w-auto" asChild>
                   <Link to="/shop">Shop Décor <ArrowRight className="ml-2 h-4 w-4" /></Link>
                 </Button>
-                <Button size="lg" variant="outline" className="border-ink/20 text-ink hover:bg-ink/5 bg-transparent px-8 h-12 text-[13px] tracking-wide font-medium transition-colors rounded-none w-[220px] lg:w-auto" asChild>
+                <Button size="lg" variant="outline" className="border-ink/20 text-ink hover:bg-ink/5 bg-transparent px-8 h-12 text-[13px] tracking-wide font-medium transition-colors rounded-none w-full lg:w-auto" asChild>
                   <Link to="/collection/luxury-decor">Explore Collections</Link>
                 </Button>
               </div>
