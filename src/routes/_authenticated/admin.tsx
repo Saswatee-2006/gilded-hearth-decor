@@ -71,6 +71,32 @@ const playNotificationSound = () => {
   }
 };
 
+const activeAlerts = new Map<string, number>();
+
+const stopNewOrderAlert = (orderId: string) => {
+  if (activeAlerts.has(orderId)) {
+    window.clearInterval(activeAlerts.get(orderId)!);
+    activeAlerts.delete(orderId);
+    console.log(`[ORDER REALTIME] Sound stopped for: ${orderId}`);
+  }
+};
+
+const startNewOrderAlert = (orderId: string) => {
+  if (activeAlerts.has(orderId)) return;
+  
+  playNotificationSound();
+  const intervalId = window.setInterval(() => {
+    playNotificationSound();
+  }, 1200);
+  
+  activeAlerts.set(orderId, intervalId);
+  console.log(`[ORDER REALTIME] Sound started looping for: ${orderId}`);
+  
+  setTimeout(() => {
+    stopNewOrderAlert(orderId);
+  }, 6000);
+};
+
 function AdminPage() {
   const { user, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
@@ -93,8 +119,8 @@ function AdminPage() {
       if ("Notification" in window) {
         Notification.requestPermission();
       }
-      playNotificationSound();
-      toast.success("Alert sound enabled");
+      startNewOrderAlert("test-sound-id");
+      toast.success("Alert sound enabled (6-second test)");
     } else {
       toast("Alert sound disabled");
     }
@@ -122,8 +148,7 @@ function AdminPage() {
           console.log(`[ORDER REALTIME] New order received: ${newOrder.id}`);
           
           if (soundEnabledRef.current) {
-            console.log(`[ORDER REALTIME] Sound triggered`);
-            playNotificationSound();
+            startNewOrderAlert(newOrder.id);
           }
           
           console.log(`[ORDER REALTIME] Popup triggered`);
@@ -168,7 +193,11 @@ function AdminPage() {
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "orders" },
-        () => {
+        (payload) => {
+          const updatedOrder = payload.new as any;
+          if (updatedOrder.status !== "placed") {
+            stopNewOrderAlert(updatedOrder.id);
+          }
           queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
         }
       )
@@ -200,6 +229,7 @@ function AdminPage() {
       .subscribe();
 
     return () => {
+      Array.from(activeAlerts.keys()).forEach(id => stopNewOrderAlert(id));
       supabase.removeChannel(ordersChannel);
       supabase.removeChannel(inventoryChannel);
       supabase.removeChannel(productsChannel);
@@ -258,6 +288,7 @@ function AdminPage() {
 
   const setStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      stopNewOrderAlert(id);
       const updateData = { status, updated_at: new Date().toISOString() };
       const { error } = await supabase.from("orders").update(updateData as never).eq("id", id);
       if (error) throw error;
@@ -406,7 +437,7 @@ function AdminPage() {
             <Button variant={soundEnabled ? "default" : "outline"} size="sm" className="hidden lg:flex text-xs h-8" onClick={toggleSound}>
               {soundEnabled ? "Disable Alerts" : "Enable Alerts"}
             </Button>
-            <Button variant="outline" size="sm" className="hidden lg:flex text-xs h-8" onClick={playNotificationSound}>
+            <Button variant="outline" size="sm" className="hidden lg:flex text-xs h-8" onClick={() => startNewOrderAlert("test-sound")}>
               Test Sound
             </Button>
             <DropdownMenu>
