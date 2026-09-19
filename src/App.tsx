@@ -75,6 +75,7 @@ function NotFoundComponent() {
 }
 
 import { useAuth } from "@/lib/auth";
+import { Navigate } from "react-router-dom";
 
 function SplashHandler() {
   useEffect(() => {
@@ -92,6 +93,28 @@ function SplashHandler() {
   }, []);
 
   return null;
+}
+
+function AdminGuard({ children }: { children: React.ReactNode }) {
+  const { user, isAdmin, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse font-medium text-muted-foreground">Verifying access...</div>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return <Navigate to="/auth?returnTo=/admin" replace />;
+  }
+  
+  if (!isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <>{children}</>;
 }
 
 const queryClient = new QueryClient();
@@ -134,7 +157,6 @@ export function App() {
                   {/* Authenticated Routes - we will handle auth guards in components */}
                   <Route path="account" element={<AccountPage />} />
                   <Route path="order/:id" element={<OrderDetailPage />} />
-                  <Route path="admin/*" element={<AdminPage />} />
 
                   <Route path="journal" element={<JournalPage />} />
                   <Route path="journal/:slug" element={<ArticlePage />} />
@@ -149,6 +171,16 @@ export function App() {
 
                   <Route path="*" element={<NotFoundComponent />} />
                 </Route>
+
+                {/* Admin Routes - Completely separate from SiteLayout */}
+                <Route 
+                  path="/admin/*" 
+                  element={
+                    <AdminGuard>
+                      <AdminPage />
+                    </AdminGuard>
+                  } 
+                />
               </Routes>
             </BrowserRouter>
           </ShopProvider>

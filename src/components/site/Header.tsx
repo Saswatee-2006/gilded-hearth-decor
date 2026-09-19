@@ -41,8 +41,8 @@ export function Header() {
   const profileQuery = useQuery({
     queryKey: ["header-profile", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("*").eq("id", user?.id).maybeSingle();
-      return data || { full_name: user?.user_metadata?.full_name };
+      const { data } = await supabase.from("profiles").select("*").eq("id", user?.id as string).maybeSingle();
+      return data || { full_name: user?.user_metadata?.["full_name"] };
     },
     enabled: !!user,
   });
@@ -51,8 +51,7 @@ export function Header() {
   const [shopOpen, setShopOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const isNavigating = false; // Note: isNavigating state removed or just kept, let's keep it.
-  const [isNavigatingState, setIsNavigatingState] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
   const location = useLocation();
   const isHomePage = location.pathname === "/";
 

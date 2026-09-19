@@ -5,13 +5,13 @@ import { getProductPrice, type Product } from "@/lib/catalog";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 
-export type CartLine = { id: string; qty: number; size?: string };
+export type CartLine = { id: string; qty: number; size?: string | undefined };
 export type Order = {
   id: string;
   date: string;
   total: number;
   status: string;
-  lines: { name: string; qty: number; price: number; size?: string }[];
+  lines: { name: string; qty: number; price: number; size?: string | undefined }[];
 };
 
 type ShopState = {
@@ -29,7 +29,7 @@ type ShopState = {
   placeOrder: (total: number) => Order;
   cartCount: number;
   subtotal: number;
-  cartProducts: { product: Product; qty: number; size?: string }[];
+  cartProducts: { product: Product; qty: number; size?: string | undefined }[];
   isCartOpen: boolean;
   setIsCartOpen: (open: boolean) => void;
   products: Product[];
@@ -164,7 +164,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
           const product = products.find((p) => p.id === l.id);
           return product ? { product, qty: l.qty, size: l.size } : null;
         })
-        .filter((x): x is { product: Product; qty: number; size?: string } => x !== null),
+        .filter((x) => x !== null) as { product: Product; qty: number; size?: string }[],
     [state.cart, products],
   );
 

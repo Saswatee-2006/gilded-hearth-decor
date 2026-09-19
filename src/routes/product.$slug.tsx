@@ -53,7 +53,7 @@ function ProductPage() {
         console.error("Failed to fetch inventory:", error);
         throw error;
       }
-      return data;
+      return data as any;
     },
   });
 

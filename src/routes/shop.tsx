@@ -209,7 +209,7 @@ function ShopPage() {
         </label>
       </div>
 
-      <Button variant="outline" className="w-full" onClick={() => navigate({ search: {} })}>
+      <Button variant="outline" className="w-full" onClick={() => navigate({ search: "" })}>
         Clear all filters
       </Button>
     </div>
@@ -306,7 +306,7 @@ function ShopPage() {
               <p className="mt-2 text-sm text-muted-foreground">
                 Try clearing a filter or two — there is plenty more to see.
               </p>
-              <Button className="mt-6" onClick={() => navigate({ search: {} })}>
+              <Button className="mt-6" onClick={() => navigate({ search: "" })}>
                 Clear filters
               </Button>
             </div>

@@ -94,7 +94,7 @@ export function ProductFormDialog({ open, onOpenChange, productToEdit }: Product
             image: finalImageUrl,
             description: data.description.trim(),
             updated_at: new Date().toISOString()
-          })
+          } as never)
           .eq("id", productToEdit.id);
         if (error) throw error;
       } else {
@@ -122,7 +122,7 @@ export function ProductFormDialog({ open, onOpenChange, productToEdit }: Product
           p_description: productPayload.description,
           p_stock: parseInt(data.stock, 10),
           p_variant: "Default"
-        });
+        } as any);
 
         if (!rpcError) {
            // Success using RPC
@@ -132,12 +132,12 @@ export function ProductFormDialog({ open, onOpenChange, productToEdit }: Product
         // Fallback to 2-step process if RPC not found or failed for other reasons
         const { data: productData, error: productError } = await supabase
           .from("products")
-          .insert(productPayload)
+          .insert(productPayload as never)
           .select("id")
           .single();
 
         if (productError) throw productError;
-        productId = productData.id;
+        productId = (productData as any).id;
 
         const { error: invError } = await supabase
           .from("inventory")
@@ -145,7 +145,7 @@ export function ProductFormDialog({ open, onOpenChange, productToEdit }: Product
             product_id: productId,
             variant: "Default",
             stock: parseInt(data.stock, 10)
-          });
+          } as never);
 
         if (invError) {
           // Rollback product creation

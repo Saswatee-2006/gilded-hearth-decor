@@ -40,10 +40,10 @@ import { formatINR } from "@/lib/catalog";
 import { useShop } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
 import { getAddresses, saveAddress, deleteAddress as deleteAddressFn } from "@/lib/addresses";
-import type { Address } from "@/lib/addresses";
+import type { SavedAddress } from "@/lib/addresses";
 import { supabase } from "@/integrations/supabase/client";
 
-const emptyAddress: Address = {
+const emptyAddress: any = {
   id: "",
   full_name: "",
   phone: "",
@@ -87,7 +87,7 @@ function AccountPage() {
       const { data, error } = await supabase
         .from("orders")
         .select("*, items:order_items(*)")
-        .eq("user_id", user?.id)
+        .eq("user_id", user?.id as string)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data || [];
@@ -130,9 +130,9 @@ function AccountPage() {
   const profileQuery = useQuery({
     queryKey: ["my-profile", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("*").eq("id", user?.id).maybeSingle();
+      const { data, error } = await supabase.from("profiles").select("*").eq("id", user?.id as string).maybeSingle();
       if (error) throw error;
-      return data || { full_name: user?.user_metadata?.full_name, phone: user?.phone };
+      return data || { full_name: user?.user_metadata?.["full_name"], phone: user?.phone };
     },
     enabled: !!user,
   });
@@ -166,7 +166,7 @@ function AccountPage() {
         .update({
           full_name: profileDraft?.full_name ?? null,
           phone: profileDraft?.phone ?? null,
-        })
+        } as never)
         .eq("id", user!.id);
       if (error) throw error;
     },

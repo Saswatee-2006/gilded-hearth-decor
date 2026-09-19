@@ -50,7 +50,7 @@ export function InventoryManager({ products, inventory, isLoading }: InventoryMa
     mutationFn: async ({ id, stock }: { id: string; stock: number }) => {
       const { error } = await supabase
         .from("inventory")
-        .update({ stock, updated_at: new Date().toISOString() })
+        .update({ stock, updated_at: new Date().toISOString() } as never)
         .eq("id", id);
       if (error) throw error;
     },

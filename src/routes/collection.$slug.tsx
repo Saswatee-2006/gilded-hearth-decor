@@ -3,10 +3,13 @@ import { Link, useParams } from "react-router-dom";
 import { ProductCard } from "@/components/site/ProductCard";
 import { COLLECTIONS, productsInCollection } from "@/lib/catalog";
 
+import { useShop } from "@/lib/shop-store";
+
 function CollectionPage() {
+  const { products: allProducts } = useShop();
   const { slug } = useParams<{ slug: string }>();
   const collection = COLLECTIONS.find((c) => c.slug === slug);
-  const products = productsInCollection(slug);
+  const products = productsInCollection(allProducts, slug || "");
 
   if (!collection) {
     return (

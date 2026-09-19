@@ -26,21 +26,25 @@ function AuthPage() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
-    // Only auto-redirect if the user lands on this page already logged in
-    // and is not currently going through the active login flow.
+    // Rely exclusively on the authenticated state to handle navigation.
+    // This prevents race conditions where the redirect happens before
+    // the auth context verifies the user's admin role.
     if (user && !loading && !isLoggingIn) {
-      setShowSuccess(true);
-      const timer = setTimeout(() => {
-        if (isAdmin) {
-          navigate("/admin", { replace: true });
-        } else if (search["returnTo"]) {
-          navigate(search["returnTo"], { replace: true });
-        } else {
-          navigate("/", { replace: true });
-        }
-      }, 1800);
-      return () => clearTimeout(timer);
+      if (isAdmin) {
+        navigate("/admin", { replace: true });
+      } else {
+        setShowSuccess(true);
+        const timer = setTimeout(() => {
+          if (search["returnTo"]) {
+            navigate(search["returnTo"], { replace: true });
+          } else {
+            navigate("/", { replace: true });
+          }
+        }, 1800);
+        return () => clearTimeout(timer);
+      }
     }
+    return undefined;
   }, [user, isAdmin, loading, navigate, search["returnTo"], isLoggingIn]);
 
   if (showSuccess) {
@@ -63,7 +67,7 @@ function AuthPage() {
             </svg>
           </div>
           <h1 className="font-display text-3xl">
-            Welcome back{user?.user_metadata?.full_name ? `, ${user.user_metadata.full_name}` : ""}
+            Welcome back{user?.user_metadata?.["full_name"] ? `, ${user.user_metadata["full_name"]}` : ""}
           </h1>
           <p className="mt-3 text-muted-foreground">You’re signed in and ready to shop.</p>
         </div>
@@ -88,29 +92,10 @@ function AuthPage() {
         toast.success("Welcome back");
         
         if (authData.user) {
-          // Fetch role directly to avoid race conditions with React context
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("role")
-            .eq("id", authData.user.id)
-            .single();
-
-          if (profile?.role === "admin") {
-            // Admin goes directly to admin dashboard
-            navigate("/admin", { replace: true });
-            return;
-          } else {
-            // Normal user goes through the success splash screen
-            setShowSuccess(true);
-            setTimeout(() => {
-              if (search["returnTo"]) {
-                navigate(search["returnTo"], { replace: true });
-              } else {
-                navigate("/", { replace: true });
-              }
-            }, 1800);
-            return;
-          }
+          // Success! The onAuthStateChange listener in AuthProvider will pick this up.
+          // It will set loading=true, fetch the admin profile, and then set isAdmin.
+          // Once loading completes, the useEffect above will seamlessly navigate the user 
+          // to either /admin or / without race conditions!
         }
       } else if (mode === "signup") {
         if (!form.email || !form.password || !form.name) {

@@ -40,7 +40,7 @@ export async function saveOrder(input: SaveOrderInput) {
       total: input.total,
       shipping_address: input.address,
       status: "placed"
-    })
+    } as never)
     .select("id")
     .single();
 
@@ -48,7 +48,7 @@ export async function saveOrder(input: SaveOrderInput) {
 
   // Insert items
   const items = input.lines.map(({ product, qty }) => ({
-    order_id: orderData.id,
+    order_id: (orderData as any).id,
     product_id: product.id || null, // in case products table is not populated yet
     name: product.name,
     image_key: product.image,
@@ -56,8 +56,8 @@ export async function saveOrder(input: SaveOrderInput) {
     qty,
   }));
 
-  const { error: itemsError } = await supabase.from("order_items").insert(items);
+  const { error: itemsError } = await supabase.from("order_items").insert(items as never[]);
   if (itemsError) throw itemsError;
 
-  return orderData.id;
+  return (orderData as any).id;
 }

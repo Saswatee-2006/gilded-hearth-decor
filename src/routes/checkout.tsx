@@ -64,7 +64,7 @@ function CheckoutPage() {
       getAddresses()
         .then((addresses) => {
           setSavedAddresses(addresses);
-          if (addresses.length > 0) {
+          if (addresses.length > 0 && addresses[0]) {
             setSelectedAddressId(addresses[0].id);
           }
         })
@@ -173,7 +173,7 @@ function CheckoutPage() {
       setSavedAddresses(savedAddresses.filter((a) => a.id !== id));
       if (selectedAddressId === id) {
         const remaining = savedAddresses.filter((a) => a.id !== id);
-        setSelectedAddressId(remaining.length > 0 ? remaining[0].id : "manual");
+        setSelectedAddressId(remaining.length > 0 ? remaining[0]?.id || "manual" : "manual");
       }
       toast.success("Address deleted");
     } catch {
@@ -314,7 +314,7 @@ function CheckoutPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              setSelectedAddressId(savedAddresses[0].id);
+                              setSelectedAddressId(savedAddresses[0]?.id || "manual");
                               setEditingAddressId(null);
                             }}
                           >
@@ -446,6 +446,7 @@ function CheckoutPage() {
                           state: address.state,
                           pincode: address.pincode,
                         });
+                        if (!updated) throw new Error("Failed to update");
                         setSavedAddresses((prev) =>
                           prev.map((a) => (a.id === updated.id ? updated : a)),
                         );
@@ -497,8 +498,8 @@ function CheckoutPage() {
 
                 let finalShippingAddress;
                 if (selectedAddressId !== "manual") {
-                  const sAddr = savedAddresses.find((a) => a.id === selectedAddressId)!;
-                  finalShippingAddress = {
+                  const sAddr = savedAddresses.find((a) => a.id === selectedAddressId);
+                  finalShippingAddress = sAddr ? {
                     name: sAddr.full_name,
                     mobile: sAddr.phone,
                     email: user?.email || "customer@example.com",
@@ -507,7 +508,7 @@ function CheckoutPage() {
                     city: sAddr.city,
                     state: sAddr.state,
                     pincode: sAddr.pincode,
-                  };
+                  } : undefined;
                 } else {
                   finalShippingAddress = address;
                 }
@@ -524,7 +525,7 @@ function CheckoutPage() {
                       discount: 0,
                       shipping: shipping + express,
                       total,
-                      address: finalShippingAddress,
+                      address: finalShippingAddress || address,
                       lines,
                     });
                   } catch {

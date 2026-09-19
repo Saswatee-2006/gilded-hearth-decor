@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .eq("id", userId)
           .single();
         if (mounted) {
-          setIsAdmin(data?.role === "admin");
+          setIsAdmin((data as any)?.role === "admin");
           setLoading(false);
         }
       } catch (e) {

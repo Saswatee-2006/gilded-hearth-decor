@@ -379,7 +379,7 @@ function Home() {
           <SectionHead eyebrow="Collections" title="Shop a Feeling" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {["under-999", "luxury-decor", "minimalist", "gift-ideas"].map((slug) => {
-              const count = productsInCollection(slug).length;
+              const count = productsInCollection(products, slug).length;
               return (
                 <Link
                   key={slug}

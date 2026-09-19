@@ -43,6 +43,7 @@ export function ScrollToTop() {
     } else {
       // It's a new navigation (PUSH or REPLACE). Scroll to top.
       window.scrollTo(0, 0);
+      return undefined;
     }
   }, [location.key, navigationType]);
 

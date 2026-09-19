@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
+import { useEffect } from "react";
 import { CheckCircle2, Circle, Clock, Package, Truck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -28,10 +29,10 @@ function OrderDetailPage() {
       const { data, error } = await supabase
         .from("orders")
         .select("*, items:order_items(*)")
-        .eq("id", id)
+        .eq("id", id as string)
         .single();
       if (error) throw error;
-      return data;
+      return data as any;
     },
     enabled: !!user && !!id,
   });

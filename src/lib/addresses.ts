@@ -70,7 +70,7 @@ export async function updateAddress(id: string, input: Partial<SaveAddressInput>
     addrs.forEach((a) => (a.is_default = false));
   }
   
-  addrs[idx] = { ...addrs[idx], ...input };
+  addrs[idx] = { ...addrs[idx], ...input } as SavedAddress;
   setLocalAddresses(addrs);
   return addrs[idx];
 }

@@ -66,12 +66,10 @@ const playNotificationSound = () => {
 };
 
 function AdminPage() {
-  const { user, loading, isAdmin, signOut } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-
-  const [authChecked, setAuthChecked] = useState(false);
   
   const processedOrders = useRef<Set<string>>(new Set());
   const [soundEnabled, setSoundEnabled] = useState(() => {
@@ -89,22 +87,6 @@ function AdminPage() {
       toast("Alert sound disabled");
     }
   };
-
-  useEffect(() => {
-    if (loading) return;
-    
-    if (!user) {
-      navigate("/auth?returnTo=/admin", { replace: true });
-      return;
-    }
-
-    if (!isAdmin) {
-      navigate("/", { replace: true });
-      return;
-    }
-
-    setAuthChecked(true);
-  }, [user, loading, isAdmin, navigate]);
 
   // Real-time notifications and cache invalidation
   useEffect(() => {
@@ -187,7 +169,7 @@ function AdminPage() {
         .select("*, order_items(*)")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data || [];
+      return (data as any[]) || [];
     },
   });
 
@@ -197,7 +179,7 @@ function AdminPage() {
     queryFn: async () => {
       const { data, error } = await supabase.from("products").select("*").order("name");
       if (error) throw error;
-      return data || [];
+      return (data as any[]) || [];
     },
   });
 
@@ -210,7 +192,7 @@ function AdminPage() {
         .select("*, products(name)")
         .order("updated_at", { ascending: false });
       if (error) throw error;
-      return data || [];
+      return (data as any[]) || [];
     },
   });
 
@@ -223,13 +205,14 @@ function AdminPage() {
         .select("id, full_name, email, role, created_at, phone")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data || [];
+      return (data as any[]) || [];
     },
   });
 
   const setStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase.from("orders").update({ status, updated_at: new Date().toISOString() }).eq("id", id);
+      const updateData = { status, updated_at: new Date().toISOString() };
+      const { error } = await supabase.from("orders").update(updateData as never).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -264,9 +247,10 @@ function AdminPage() {
     onError: (err: any) => toast.error(err.message || "Failed to delete product"),
   });
 
-  const updateStock = useMutation({
+  const updateInventory = useMutation({
     mutationFn: async ({ id, stock }: { id: string; stock: number }) => {
-      const { error } = await supabase.from("inventory").update({ stock, updated_at: new Date().toISOString() }).eq("id", id);
+      const updateData = { stock, updated_at: new Date().toISOString() };
+      const { error } = await supabase.from("inventory").update(updateData as never).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -276,13 +260,11 @@ function AdminPage() {
     onError: (err: any) => toast.error(err.message || "Failed to update inventory"),
   });
 
-  if (!authChecked)
-    return <div className="px-4 py-12 text-center text-sm text-muted-foreground animate-pulse">Checking credentials…</div>;
 
-  const orders = ordersQuery.data || [];
-  const products = productsQuery.data || [];
-  const inventory = inventoryQuery.data || [];
-  const users = usersQuery.data || [];
+  const orders: any[] = (ordersQuery.data as any[]) || [];
+  const products: any[] = (productsQuery.data as any[]) || [];
+  const inventory: any[] = (inventoryQuery.data as any[]) || [];
+  const users: any[] = (usersQuery.data as any[]) || [];
 
   const pendingOrders = orders.filter((o) => o.status === "placed").length;
   const lowStock = inventory.filter((i) => i.stock > 0 && i.stock < 5).length;
