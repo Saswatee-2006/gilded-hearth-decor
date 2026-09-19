@@ -9,16 +9,22 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/lib/auth";
-import { PRODUCTS, formatINR, getProductPrice } from "@/lib/catalog";
+import { formatINR, getProductPrice } from "@/lib/catalog";
 import { saveOrder } from "@/lib/orders";
 import { FREE_SHIPPING_THRESHOLD, useShop, type Order } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
-import { getAddresses, saveAddress, deleteAddress, updateAddress, type SavedAddress } from "@/lib/addresses";
+import {
+  getAddresses,
+  saveAddress,
+  deleteAddress,
+  updateAddress,
+  type SavedAddress,
+} from "@/lib/addresses";
 
 const STEPS = ["Address", "Delivery", "Payment", "Confirmation"];
 
 function CheckoutPage() {
-  const { cartProducts, subtotal, placeOrder } = useShop();
+  const { cart, cartProducts, subtotal, placeOrder, clearCart, products } = useShop();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -33,14 +39,14 @@ function CheckoutPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [delivery, setDelivery] = useState("standard");
   const [payment, setPayment] = useState("upi");
-  
+
   // Address States
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>("manual");
   const [saveForFuture, setSaveForFuture] = useState(false);
   const [loadingAddresses, setLoadingAddresses] = useState(true);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
-  
+
   const [address, setAddress] = useState({
     name: "",
     mobile: "",
@@ -92,8 +98,8 @@ function CheckoutPage() {
         </span>
         <h1 className="mt-6 font-display text-4xl">Order confirmed</h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          Order <span className="text-foreground">#{order.id}</span> · {formatINR(order.total)} · paid
-          via {payment.toUpperCase()}
+          Order <span className="text-foreground">#{order.id}</span> · {formatINR(order.total)} ·
+          paid via {payment.toUpperCase()}
         </p>
         <ul className="mt-8 space-y-2 text-left text-sm">
           {order.lines.map((l) => (
@@ -117,7 +123,7 @@ function CheckoutPage() {
     );
   }
 
-  const isManualValid = 
+  const isManualValid =
     address.name.trim().length > 1 &&
     /^[6-9]\d{9}$/.test(address.mobile) &&
     address.email.includes("@") &&
@@ -201,44 +207,89 @@ function CheckoutPage() {
           {step === 0 && (
             <div className="space-y-8">
               {loadingAddresses ? (
-                <div className="text-sm text-muted-foreground animate-pulse">Loading addresses...</div>
+                <div className="text-sm text-muted-foreground animate-pulse">
+                  Loading addresses...
+                </div>
               ) : (
                 <>
                   {savedAddresses.length > 0 && (
                     <div className="space-y-4">
                       <h3 className="eyebrow text-foreground">Saved Addresses</h3>
-                      <RadioGroup value={selectedAddressId} onValueChange={(val) => {
-                        setSelectedAddressId(val);
-                        setEditingAddressId(null);
-                      }} className="grid gap-4 sm:grid-cols-2">
+                      <RadioGroup
+                        value={selectedAddressId}
+                        onValueChange={(val) => {
+                          setSelectedAddressId(val);
+                          setEditingAddressId(null);
+                        }}
+                        className="grid gap-4 sm:grid-cols-2"
+                      >
                         {savedAddresses.map((addr) => (
                           <label
                             key={addr.id}
                             className={cn(
                               "relative flex cursor-pointer flex-col gap-2 rounded-md border p-4 transition-colors",
-                              selectedAddressId === addr.id ? "border-accent bg-accent/5" : "hover:bg-secondary/50"
+                              selectedAddressId === addr.id
+                                ? "border-accent bg-accent/5"
+                                : "hover:bg-secondary/50",
                             )}
                           >
                             <div className="flex items-start justify-between">
-                              <RadioGroupItem value={addr.id} id={addr.id} className="mt-1 sr-only" />
+                              <RadioGroupItem
+                                value={addr.id}
+                                id={addr.id}
+                                className="mt-1 sr-only"
+                              />
                               <div className="flex items-center gap-2">
-                                <div className={cn("h-4 w-4 rounded-full border flex items-center justify-center", selectedAddressId === addr.id ? "border-accent" : "border-input")}>
-                                  {selectedAddressId === addr.id && <div className="h-2 w-2 rounded-full bg-accent" />}
+                                <div
+                                  className={cn(
+                                    "h-4 w-4 rounded-full border flex items-center justify-center",
+                                    selectedAddressId === addr.id
+                                      ? "border-accent"
+                                      : "border-input",
+                                  )}
+                                >
+                                  {selectedAddressId === addr.id && (
+                                    <div className="h-2 w-2 rounded-full bg-accent" />
+                                  )}
                                 </div>
                                 <span className="font-semibold text-sm">{addr.full_name}</span>
                               </div>
-                              {addr.label && <span className="rounded bg-secondary px-2 py-0.5 text-[10px] uppercase tracking-wider">{addr.label}</span>}
+                              {addr.label && (
+                                <span className="rounded bg-secondary px-2 py-0.5 text-[10px] uppercase tracking-wider">
+                                  {addr.label}
+                                </span>
+                              )}
                             </div>
                             <div className="mt-1 text-sm text-muted-foreground pl-6">
                               <p>{addr.line1}</p>
                               {addr.line2 && <p>{addr.line2}</p>}
-                              <p>{addr.city}, {addr.state} - {addr.pincode}</p>
+                              <p>
+                                {addr.city}, {addr.state} - {addr.pincode}
+                              </p>
                               <p className="mt-1">+91 {addr.phone}</p>
                             </div>
-                            
+
                             <div className="mt-3 flex gap-3 pl-6">
-                              <button type="button" onClick={(e) => { e.preventDefault(); handleEditAddress(addr); }} className="text-xs font-semibold text-primary hover:underline">Edit</button>
-                              <button type="button" onClick={(e) => { e.preventDefault(); handleDeleteAddress(addr.id); }} className="text-xs font-semibold text-destructive hover:underline">Delete</button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleEditAddress(addr);
+                                }}
+                                className="text-xs font-semibold text-primary hover:underline"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleDeleteAddress(addr.id);
+                                }}
+                                className="text-xs font-semibold text-destructive hover:underline"
+                              >
+                                Delete
+                              </button>
                             </div>
                           </label>
                         ))}
@@ -255,12 +306,21 @@ function CheckoutPage() {
                   {selectedAddressId === "manual" && (
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                         <h3 className="eyebrow text-foreground">{editingAddressId ? "Edit Address" : "Enter a new address"}</h3>
-                         {savedAddresses.length > 0 && (
-                           <Button variant="ghost" size="sm" onClick={() => { setSelectedAddressId(savedAddresses[0].id); setEditingAddressId(null); }}>
-                             Cancel
-                           </Button>
-                         )}
+                        <h3 className="eyebrow text-foreground">
+                          {editingAddressId ? "Edit Address" : "Enter a new address"}
+                        </h3>
+                        {savedAddresses.length > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedAddressId(savedAddresses[0].id);
+                              setEditingAddressId(null);
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        )}
                       </div>
                       <div className="grid gap-4 sm:grid-cols-2">
                         {(
@@ -293,8 +353,15 @@ function CheckoutPage() {
 
                       {!editingAddressId && (
                         <div className="flex items-center space-x-2 pt-2">
-                          <Checkbox id="save-address" checked={saveForFuture} onCheckedChange={(c) => setSaveForFuture(c as boolean)} />
-                          <label htmlFor="save-address" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          <Checkbox
+                            id="save-address"
+                            checked={saveForFuture}
+                            onCheckedChange={(c) => setSaveForFuture(c as boolean)}
+                          />
+                          <label
+                            htmlFor="save-address"
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
                             Save this address for future orders
                           </label>
                         </div>
@@ -312,7 +379,10 @@ function CheckoutPage() {
                 { id: "standard", label: "Standard delivery", note: "4–6 days", price: shipping },
                 { id: "express", label: "Express delivery", note: "2–3 days", price: 149 },
               ].map((d) => (
-                <label key={d.id} className="flex cursor-pointer items-center gap-3 rounded-md border p-4">
+                <label
+                  key={d.id}
+                  className="flex cursor-pointer items-center gap-3 rounded-md border p-4"
+                >
                   <RadioGroupItem value={d.id} id={d.id} />
                   <span className="flex-1">
                     <span className="block text-sm">{d.label}</span>
@@ -336,7 +406,10 @@ function CheckoutPage() {
                     ["cod", "Cash on Delivery"],
                   ] as const
                 ).map(([id, label]) => (
-                  <label key={id} className="flex cursor-pointer items-center gap-3 rounded-md border p-4 text-sm">
+                  <label
+                    key={id}
+                    className="flex cursor-pointer items-center gap-3 rounded-md border p-4 text-sm"
+                  >
                     <RadioGroupItem value={id} id={id} />
                     {label}
                   </label>
@@ -358,50 +431,52 @@ function CheckoutPage() {
               disabled={!canContinue || saving || loadingAddresses}
               onClick={async () => {
                 if (step === 0 && !canContinue) return;
-                
+
                 if (step === 0) {
                   if (selectedAddressId === "manual") {
                     if (editingAddressId && user) {
-                       setSaving(true);
-                       try {
-                         const updated = await updateAddress(editingAddressId, {
-                           full_name: address.name,
-                           phone: address.mobile,
-                           line1: address.line1,
-                           line2: address.line2,
-                           city: address.city,
-                           state: address.state,
-                           pincode: address.pincode,
-                         });
-                         setSavedAddresses(prev => prev.map(a => a.id === updated.id ? updated : a));
-                         setSelectedAddressId(updated.id);
-                         setEditingAddressId(null);
-                       } catch {
-                         toast.error("Failed to update address");
-                         setSaving(false);
-                         return;
-                       }
-                       setSaving(false);
+                      setSaving(true);
+                      try {
+                        const updated = await updateAddress(editingAddressId, {
+                          full_name: address.name,
+                          phone: address.mobile,
+                          line1: address.line1,
+                          line2: address.line2,
+                          city: address.city,
+                          state: address.state,
+                          pincode: address.pincode,
+                        });
+                        setSavedAddresses((prev) =>
+                          prev.map((a) => (a.id === updated.id ? updated : a)),
+                        );
+                        setSelectedAddressId(updated.id);
+                        setEditingAddressId(null);
+                      } catch {
+                        toast.error("Failed to update address");
+                        setSaving(false);
+                        return;
+                      }
+                      setSaving(false);
                     } else if (saveForFuture && user) {
-                       setSaving(true);
-                       try {
-                         const saved = await saveAddress(user.id, {
-                           full_name: address.name,
-                           phone: address.mobile,
-                           line1: address.line1,
-                           line2: address.line2,
-                           city: address.city,
-                           state: address.state,
-                           pincode: address.pincode,
-                         });
-                         setSavedAddresses([saved, ...savedAddresses]);
-                         setSelectedAddressId(saved.id);
-                       } catch {
-                         toast.error("Failed to save address");
-                         setSaving(false);
-                         return;
-                       }
-                       setSaving(false);
+                      setSaving(true);
+                      try {
+                        const saved = await saveAddress(user.id, {
+                          full_name: address.name,
+                          phone: address.mobile,
+                          line1: address.line1,
+                          line2: address.line2,
+                          city: address.city,
+                          state: address.state,
+                          pincode: address.pincode,
+                        });
+                        setSavedAddresses([saved, ...savedAddresses]);
+                        setSelectedAddressId(saved.id);
+                      } catch {
+                        toast.error("Failed to save address");
+                        setSaving(false);
+                        return;
+                      }
+                      setSaving(false);
                     }
                   }
                   setStep((s) => s + 1);
@@ -412,25 +487,29 @@ function CheckoutPage() {
                   setStep((s) => s + 1);
                   return;
                 }
-                
+
                 setSaving(true);
-                const lines = cartProducts.map(({ product, qty, size }) => ({ product, qty, size }));
-                
+                const lines = cartProducts.map(({ product, qty, size }) => ({
+                  product,
+                  qty,
+                  size,
+                }));
+
                 let finalShippingAddress;
                 if (selectedAddressId !== "manual") {
-                   const sAddr = savedAddresses.find(a => a.id === selectedAddressId)!;
-                   finalShippingAddress = {
-                     name: sAddr.full_name,
-                     mobile: sAddr.phone,
-                     email: user?.email || "customer@example.com",
-                     line1: sAddr.line1,
-                     line2: sAddr.line2 || "",
-                     city: sAddr.city,
-                     state: sAddr.state,
-                     pincode: sAddr.pincode,
-                   };
+                  const sAddr = savedAddresses.find((a) => a.id === selectedAddressId)!;
+                  finalShippingAddress = {
+                    name: sAddr.full_name,
+                    mobile: sAddr.phone,
+                    email: user?.email || "customer@example.com",
+                    line1: sAddr.line1,
+                    line2: sAddr.line2 || "",
+                    city: sAddr.city,
+                    state: sAddr.state,
+                    pincode: sAddr.pincode,
+                  };
                 } else {
-                   finalShippingAddress = address;
+                  finalShippingAddress = address;
                 }
 
                 const placed = placeOrder(total);
@@ -463,7 +542,8 @@ function CheckoutPage() {
           </div>
           {step === 0 && selectedAddressId === "manual" && !canContinue && (
             <p className="mt-3 text-xs text-muted-foreground">
-              Please fill your name, a 10-digit mobile, email, address, city, state and 6-digit pincode.
+              Please fill your name, a 10-digit mobile, email, address, city, state and 6-digit
+              pincode.
             </p>
           )}
         </div>

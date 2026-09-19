@@ -39,10 +39,7 @@ export function Reveal({
   }, [delay]);
 
   return (
-    <Tag
-      ref={ref as never}
-      className={cn("reveal", shown && "reveal-in", className)}
-    >
+    <Tag ref={ref as never} className={cn("reveal", shown && "reveal-in", className)}>
       {children}
     </Tag>
   );

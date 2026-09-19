@@ -2,22 +2,30 @@ import { Link, useNavigate, useLocation, useSearchParams } from "react-router-do
 import { LayoutGrid, List, SlidersHorizontal, Star } from "lucide-react";
 
 import { ProductCard } from "@/components/site/ProductCard";
+import { Footer } from "@/components/site/Footer";
+import { resolveImage } from "@/lib/catalog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   CATEGORIES,
   FILTER_OPTIONS,
   IMAGES,
-  PRODUCTS,
   ROOMS,
   STYLES,
   formatINR,
   type Product,
 } from "@/lib/catalog";
+import { useShop } from "@/lib/shop-store";
 
 type ShopSearch = {
   q?: string | undefined;
@@ -35,8 +43,8 @@ type ShopSearch = {
 
 const str = (v: unknown) => (typeof v === "string" && v.length > 0 ? v : undefined);
 
-function applyFilters(s: ShopSearch): Product[] {
-  let list = [...PRODUCTS];
+function applyFilters(productsList: Product[], s: ShopSearch): Product[] {
+  let list = [...productsList];
   if (s.q) {
     const t = s.q.toLowerCase();
     list = list.filter((p) =>
@@ -74,6 +82,7 @@ function applyFilters(s: ShopSearch): Product[] {
 }
 
 function ShopPage() {
+  const { products: storeProducts, isLoadingProducts } = useShop();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const search: ShopSearch = {
@@ -86,7 +95,7 @@ function ShopPage() {
     sort: searchParams.get("sort") || undefined,
     view: (searchParams.get("view") as "grid" | "list") || undefined,
   };
-  const products = applyFilters(search);
+  const products = applyFilters(storeProducts, search);
   const view = search.view ?? "grid";
 
   const set = (patch: Partial<ShopSearch>) => {
@@ -200,11 +209,7 @@ function ShopPage() {
         </label>
       </div>
 
-      <Button
-        variant="outline"
-        className="w-full"
-        onClick={() => navigate({ search: {} })}
-      >
+      <Button variant="outline" className="w-full" onClick={() => navigate({ search: {} })}>
         Clear all filters
       </Button>
     </div>
@@ -227,7 +232,7 @@ function ShopPage() {
               ? (CATEGORIES.find((c) => c.slug === search.category)?.name ?? "Shop")
               : "All Décor"}
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">{products.length} pieces</p>
+          <p className="mt-2 text-sm text-muted-foreground">{isLoadingProducts ? "Loading pieces..." : `${products.length} pieces`}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -291,7 +296,11 @@ function ShopPage() {
         </aside>
 
         <div>
-          {products.length === 0 ? (
+          {isLoadingProducts ? (
+            <div className="rounded-md border border-dashed p-16 text-center">
+              <p className="font-display text-xl text-muted-foreground animate-pulse">Loading collection...</p>
+            </div>
+          ) : products.length === 0 ? (
             <div className="rounded-md border border-dashed p-16 text-center">
               <p className="font-display text-2xl">Nothing matches those filters</p>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -305,9 +314,9 @@ function ShopPage() {
             <ul className="space-y-6">
               {products.map((p) => (
                 <li key={p.id} className="flex gap-5 border-b pb-6">
-                  <Link to={`/product/${p.slug }`} className="shrink-0">
+                  <Link to={`/product/${p.slug}`} className="shrink-0">
                     <img
-                      src={IMAGES[p.image]}
+                      src={resolveImage(p.image)}
                       alt={p.name}
                       loading="lazy"
                       width={1024}
@@ -318,14 +327,14 @@ function ShopPage() {
                   <div className="min-w-0">
                     <p className="eyebrow">{p.subcategory}</p>
                     <h2 className="font-display text-xl">
-                      <Link to={`/product/${p.slug }`} className="link-underline">
+                      <Link to={`/product/${p.slug}`} className="link-underline">
                         {p.name}
                       </Link>
                     </h2>
-                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{p.description}</p>
-                    <p className="mt-2 text-sm">
-                      {formatINR(p.price)}
+                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                      {p.description}
                     </p>
+                    <p className="mt-2 text-sm">{formatINR(p.price)}</p>
                   </div>
                 </li>
               ))}

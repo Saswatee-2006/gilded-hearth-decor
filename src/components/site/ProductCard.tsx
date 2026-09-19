@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Heart } from "lucide-react";
 
-import { IMAGES, formatINR, type Product } from "@/lib/catalog";
+import { resolveImage, formatINR, getProductPrice, type Product } from "@/lib/catalog";
 import { useShop } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
 
@@ -12,9 +12,9 @@ export function ProductCard({ product, className }: { product: Product; classNam
   return (
     <article className={cn("group relative flex flex-col min-w-0", className)}>
       <div className="relative overflow-hidden rounded-md bg-secondary">
-        <Link to={`/product/${product.slug }`} aria-label={product.name}>
+        <Link to={`/product/${product.slug}`} aria-label={product.name}>
           <img
-            src={IMAGES[product.image]}
+            src={resolveImage(product.image)}
             alt={product.name}
             loading="lazy"
             width={1024}
@@ -55,10 +55,7 @@ export function ProductCard({ product, className }: { product: Product; classNam
       <div className="mt-3 space-y-1">
         <p className="eyebrow">{product.subcategory}</p>
         <h3 className="font-display text-lg leading-snug break-words">
-          <Link
-            to={`/product/${product.slug }`}
-            className="link-underline"
-          >
+          <Link to={`/product/${product.slug}`} className="link-underline">
             {product.name}
           </Link>
         </h3>

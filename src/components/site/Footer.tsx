@@ -43,14 +43,16 @@ export function Footer() {
           <div className="max-w-sm">
             <p className="font-display text-3xl">Bring More Beauty Home.</p>
             <p className="mt-3 text-sm text-muted-foreground">
-              Décor inspiration, new collection launches and quiet offers — a couple of times a month,
-              never more.
+              Décor inspiration, new collection launches and quiet offers — a couple of times a
+              month, never more.
             </p>
             <form
               className="mt-5 flex gap-2"
               onSubmit={(e) => {
                 e.preventDefault();
-                const input = e.currentTarget.elements.namedItem("email") as HTMLInputElement | null;
+                const input = e.currentTarget.elements.namedItem(
+                  "email",
+                ) as HTMLInputElement | null;
                 if (!input?.value.includes("@")) {
                   toast.error("Please enter a valid email address");
                   return;
@@ -93,10 +95,18 @@ export function Footer() {
         <div className="mt-6 flex flex-col gap-4 border-t pt-5 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between">
           <p>© {new Date().getFullYear()} Aarohan Décor. Associated under Mavros Tech Pvt. Ltd.</p>
           <div className="flex flex-wrap gap-4">
-            <Link to="/policies" className="link-underline">Privacy Policy</Link>
-            <Link to="/policies" className="link-underline">Terms &amp; Conditions</Link>
-            <Link to="/policies" className="link-underline">Refund Policy</Link>
-            <Link to="/shipping" className="link-underline">Shipping Policy</Link>
+            <Link to="/policies" className="link-underline">
+              Privacy Policy
+            </Link>
+            <Link to="/policies" className="link-underline">
+              Terms &amp; Conditions
+            </Link>
+            <Link to="/policies" className="link-underline">
+              Refund Policy
+            </Link>
+            <Link to="/shipping" className="link-underline">
+              Shipping Policy
+            </Link>
           </div>
           <div className="flex flex-wrap gap-2">
             {["UPI", "VISA", "MC", "RuPay", "COD"].map((p) => (

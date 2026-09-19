@@ -2,19 +2,22 @@ import { Link } from "react-router-dom";
 
 import { ProductCard } from "@/components/site/ProductCard";
 import { Button } from "@/components/ui/button";
-import { PRODUCTS } from "@/lib/catalog";
 import { useShop } from "@/lib/shop-store";
 
 function WishlistPage() {
-  const { wishlist } = useShop();
-  const items = PRODUCTS.filter((p) => wishlist.includes(p.id));
+  const { wishlist, products, isLoadingProducts } = useShop();
+  const items = products.filter((p) => wishlist.includes(p.id));
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 md:px-8">
       <h1 className="font-display text-4xl md:text-5xl">Wishlist</h1>
       <p className="mt-2 text-sm text-muted-foreground">{items.length} saved piece(s)</p>
 
-      {items.length === 0 ? (
+      {isLoadingProducts ? (
+        <div className="mt-14 rounded-md border border-dashed py-32 text-center text-muted-foreground animate-pulse">
+          Loading wishlist...
+        </div>
+      ) : items.length === 0 ? (
         <div className="mt-14 rounded-md border border-dashed p-16 text-center">
           <p className="font-display text-2xl">Nothing saved yet</p>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -25,7 +28,7 @@ function WishlistPage() {
           </Button>
         </div>
       ) : (
-        <div className="mt-10 grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-3 lg:grid-cols-4">
+        <div className="mt-10 grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-4">
           {items.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}

@@ -1,8 +1,8 @@
-const fs = require('fs');
-const code = fs.readFileSync('src/lib/catalog.ts', 'utf8');
+const fs = require("fs");
+const code = fs.readFileSync("src/lib/catalog.ts", "utf8");
 const cats = {};
 let total = 0;
-const blocks = code.split('name:');
+const blocks = code.split("name:");
 for (let i = 1; i < blocks.length; i++) {
   const match = blocks[i].match(/category:\s*"([^"]+)"/);
   if (match) {
@@ -11,5 +11,5 @@ for (let i = 1; i < blocks.length; i++) {
     total++;
   }
 }
-console.log('Total products:', total);
+console.log("Total products:", total);
 console.log(cats);

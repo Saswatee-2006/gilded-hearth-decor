@@ -56,6 +56,15 @@ export const IMAGES: Record<string, string> = {
 
 export type ImageKey = keyof typeof IMAGES;
 
+export function resolveImage(imageKeyOrUrl: string | undefined): string {
+  const fallback = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iNDAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZWVlIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGFsaWdubWVudC1iYXNlbGluZT0ibWlkZGxlIiBmaWxsPSIjYWFhIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=";
+  if (!imageKeyOrUrl) return fallback;
+  if (imageKeyOrUrl.startsWith("http://") || imageKeyOrUrl.startsWith("https://") || imageKeyOrUrl.startsWith("blob:")) {
+    return imageKeyOrUrl;
+  }
+  return IMAGES[imageKeyOrUrl] || fallback;
+}
+
 export type Product = {
   id: string;
   slug: string;
@@ -192,9 +201,7 @@ export const NAV_GROUPS: { title: string; items: { name: string; slug: string }[
   },
   {
     title: "Bedroom",
-    items: [
-      { name: "Wall Décor", slug: "wall-decor" },
-    ],
+    items: [{ name: "Wall Décor", slug: "wall-decor" }],
   },
   {
     title: "Gifts",
@@ -376,7 +383,8 @@ const seeds: Seed[] = [
     weight: "1.4 kg",
     stock: 30,
     badges: [],
-    description: "Three slim oak frames sized for A4 prints — the easiest way to start a gallery wall.",
+    description:
+      "Three slim oak frames sized for A4 prints — the easiest way to start a gallery wall.",
     care: "Wipe with a dry cloth.",
   },
   {
@@ -505,7 +513,8 @@ const seeds: Seed[] = [
     weight: "1.6 kg",
     stock: 18,
     badges: [],
-    description: "Soft ivory marbling with a high-gloss finish, sized for a narrow wall or shelf lean.",
+    description:
+      "Soft ivory marbling with a high-gloss finish, sized for a narrow wall or shelf lean.",
     care: "Avoid prolonged direct sun.",
   },
   {
@@ -591,7 +600,8 @@ const seeds: Seed[] = [
     weight: "2.6 kg",
     stock: 11,
     badges: ["featured"],
-    description: "A pair of antique-bronze figures with beautifully aged patina for a console tableau.",
+    description:
+      "A pair of antique-bronze figures with beautifully aged patina for a console tableau.",
     care: "Dust gently; do not wash.",
   },
   {
@@ -697,7 +707,8 @@ const seeds: Seed[] = [
     weight: "2.1 kg",
     stock: 22,
     badges: ["featured"],
-    description: "Lifelike monstera leaves in a ceramic pot — all of the green, none of the watering.",
+    description:
+      "Lifelike monstera leaves in a ceramic pot — all of the green, none of the watering.",
     care: "Dust leaves with a damp cloth.",
   },
   {
@@ -783,7 +794,8 @@ const seeds: Seed[] = [
     weight: "0.9 kg",
     stock: 27,
     badges: ["new"],
-    description: "A compact cylinder that throws soft light exactly where a bedside table needs it.",
+    description:
+      "A compact cylinder that throws soft light exactly where a bedside table needs it.",
     care: "Dust the shade with a brush.",
   },
   {
@@ -1106,12 +1118,7 @@ const seeds: Seed[] = [
   },
 ];
 
-export const PRODUCTS: Product[] = seeds.map((s, i) => ({
-  ...s,
-  id: `p-${String(i + 1).padStart(3, "0")}`,
-  slug: slugify(s.name),
-  gallery: s.gallery ?? [s.image, "roomLiving", "roomBedroom"],
-}));
+
 
 export const formatINR = (n: number) =>
   "₹" + n.toLocaleString("en-IN", { maximumFractionDigits: 0 });
@@ -1119,60 +1126,59 @@ export const formatINR = (n: number) =>
 export const discountPct = (p: Pick<Product, "price" | "mrp">) =>
   p.mrp > p.price ? Math.round(((p.mrp - p.price) / p.mrp) * 100) : 0;
 
-export const getProduct = (slug: string) => PRODUCTS.find((p) => p.slug === slug);
+export const getProduct = (products: Product[], slug: string) => products.find((p) => p.slug === slug);
 export const getCategory = (slug: string) => CATEGORIES.find((c) => c.slug === slug);
 
-export const productsInCollection = (slug: string): Product[] => {
+export const productsInCollection = (products: Product[], slug: string): Product[] => {
   switch (slug) {
     case "under-999":
-      return PRODUCTS.filter((p) => p.price < 1000);
+      return products.filter((p) => p.price < 1000);
     case "luxury-decor":
-      return PRODUCTS.filter((p) => p.style === "luxury");
+      return products.filter((p) => p.style === "luxury");
     case "minimalist":
-      return PRODUCTS.filter((p) => p.style === "minimalist");
+      return products.filter((p) => p.style === "minimalist");
     case "new-home":
-      return PRODUCTS.filter((p) =>
+      return products.filter((p) =>
         ["mirrors", "wall-clocks", "vases", "plants-planters", "table-decor"].includes(p.category),
       );
     case "trending-now":
-      return PRODUCTS.filter((p) => p.reviews > 130);
+      return products.filter((p) => p.reviews > 130);
     case "gift-ideas":
-      return PRODUCTS.filter((p) => p.price >= 800 && p.price <= 2600);
+      return products.filter((p) => p.price >= 800 && p.price <= 2600);
     case "statement-pieces":
-      return PRODUCTS.filter((p) => p.price >= 3200);
+      return products.filter((p) => p.price >= 3200);
     case "small-decor":
-      return PRODUCTS.filter((p) => p.size.toLowerCase().includes("small"));
+      return products.filter((p) => p.size.toLowerCase().includes("small"));
     case "bestsellers":
-      return PRODUCTS.filter((p) => p.badges.includes("bestseller"));
+      return products.filter((p) => p.badges?.includes("bestseller"));
     case "new-arrivals":
-      return PRODUCTS.filter((p) => p.badges.includes("new"));
+      return products.filter((p) => p.badges?.includes("new"));
     default:
-      return PRODUCTS;
+      return products;
   }
 };
 
-export const searchProducts = (q: string, limit = 8): Product[] => {
+export const searchProducts = (products: Product[], q: string, limit = 8): Product[] => {
   const term = q.trim().toLowerCase();
   if (!term) return [];
-  return PRODUCTS.filter((p) =>
-    [p.name, p.category, p.subcategory, p.style, p.material, p.color, ...p.room]
+  return products.filter((p) =>
+    [p.name, p.category, p.subcategory, p.style, p.material, p.color, ...(p.room || [])]
       .join(" ")
       .toLowerCase()
       .includes(term),
   ).slice(0, limit);
 };
 
-export const relatedProducts = (p: Product, limit = 4) =>
-  PRODUCTS.filter((x) => x.id !== p.id && (x.category === p.category || x.style === p.style)).slice(
+export const relatedProducts = (products: Product[], p: Product, limit = 4) =>
+  products.filter((x) => x.id !== p.id && (x.category === p.category || x.style === p.style)).slice(
     0,
     limit,
   );
 
-export const completeTheLook = (p: Product, limit = 4) =>
-  PRODUCTS.filter((x) => x.id !== p.id && x.category !== p.category && x.room.some((r) => p.room.includes(r))).slice(
-    0,
-    limit,
-  );
+export const completeTheLook = (products: Product[], p: Product, limit = 4) =>
+  products.filter(
+    (x) => x.id !== p.id && x.category !== p.category && x.room && p.room && x.room.some((r) => p.room.includes(r)),
+  ).slice(0, limit);
 
 export const FILTER_OPTIONS = {
   price: [
@@ -1184,16 +1190,15 @@ export const FILTER_OPTIONS = {
   ],
   styles: STYLES.map((s) => s.tag),
   rooms: ROOMS.map((r) => r.slug),
-  materials: Array.from(new Set(PRODUCTS.map((p) => p.material))).sort(),
-  colors: Array.from(new Set(PRODUCTS.map((p) => p.color))).sort(),
-  sizes: Array.from(new Set(PRODUCTS.map((p) => p.size))).sort(),
+  materials: ["Wood", "Ceramic", "Glass", "Metal", "Resin", "Canvas", "Cotton", "Brass"],
+  colors: ["Gold", "Silver", "Black", "White", "Beige", "Brown", "Grey", "Green", "Blue", "Red"],
+  sizes: ["Small", "Medium", "Large", "XL", "A4"],
 };
-
 
 export function getProductPrice(product: Product, size?: string): number {
   const isA4A5 = product.category === "posters" || product.name === "Golden Swirl Resin Wall Art";
   const isXLXXL = product.category === "wall-clocks" || product.category === "wall-decor";
-  
+
   if (!size) {
     if (isA4A5) size = "A4";
     else if (isXLXXL) size = "XL";

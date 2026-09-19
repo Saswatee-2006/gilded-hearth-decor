@@ -20,19 +20,45 @@ function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
 
+  const queryClient = useQueryClient();
+
   const { data: order, isLoading } = useQuery({
     queryKey: ["order", id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, order_items(*)")
+        .select("*, items:order_items(*)")
         .eq("id", id)
         .single();
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!user && !!id,
   });
+
+  useEffect(() => {
+    if (!user || !id) return;
+    
+    const channel = supabase
+      .channel(`order-${id}`)
+      .on(
+        "postgres_changes",
+        { 
+          event: "UPDATE", 
+          schema: "public", 
+          table: "orders",
+          filter: `id=eq.${id}`
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["order", id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id, user, queryClient]);
 
   if (isLoading) {
     return (
@@ -55,7 +81,7 @@ function OrderDetailPage() {
 
   const currentStepIndex = Math.max(
     0,
-    TIMELINE_STEPS.findIndex((s) => s.id === order.status)
+    TIMELINE_STEPS.findIndex((s) => s.id === order.status),
   );
 
   return (
@@ -101,13 +127,16 @@ function OrderDetailPage() {
                 const Icon = isCompleted ? step.icon : Circle;
 
                 return (
-                  <div key={step.id} className="relative flex flex-col items-center flex-1 text-center">
+                  <div
+                    key={step.id}
+                    className="relative flex flex-col items-center flex-1 text-center"
+                  >
                     {/* Horizontal Line */}
                     {i < TIMELINE_STEPS.length - 1 && (
                       <div
                         className={cn(
                           "absolute h-[2px] w-full left-[50%] top-[11px] md:top-[15px] -z-10",
-                          isCompleted ? "bg-accent" : "bg-secondary"
+                          isCompleted ? "bg-accent" : "bg-secondary",
                         )}
                       />
                     )}
@@ -115,15 +144,24 @@ function OrderDetailPage() {
                     <div
                       className={cn(
                         "flex h-6 w-6 md:h-8 md:w-8 items-center justify-center rounded-full z-10 transition-colors shrink-0",
-                        isPast ? "bg-accent text-accent-foreground" : 
-                        isCurrent ? "bg-card border-2 border-accent text-accent shadow-[0_0_0_3px_hsl(var(--accent)/0.2)] md:shadow-[0_0_0_4px_hsl(var(--accent)/0.2)]" : 
-                        "bg-card border-2 border-muted text-muted-foreground"
+                        isPast
+                          ? "bg-accent text-accent-foreground"
+                          : isCurrent
+                            ? "bg-card border-2 border-accent text-accent shadow-[0_0_0_3px_hsl(var(--accent)/0.2)] md:shadow-[0_0_0_4px_hsl(var(--accent)/0.2)]"
+                            : "bg-card border-2 border-muted text-muted-foreground",
                       )}
                     >
-                      <Icon className={cn("h-3 w-3 md:h-4 md:w-4", isPast && "text-accent-foreground")} />
+                      <Icon
+                        className={cn("h-3 w-3 md:h-4 md:w-4", isPast && "text-accent-foreground")}
+                      />
                     </div>
                     <div className="mt-2 md:mt-3 w-full px-0.5">
-                      <p className={cn("text-[11px] sm:text-[12px] md:text-sm font-medium leading-[1.2]", isCompleted ? "text-foreground" : "text-muted-foreground")}>
+                      <p
+                        className={cn(
+                          "text-[11px] sm:text-[12px] md:text-sm font-medium leading-[1.2]",
+                          isCompleted ? "text-foreground" : "text-muted-foreground",
+                        )}
+                      >
                         {step.label}
                       </p>
                     </div>
@@ -138,8 +176,8 @@ function OrderDetailPage() {
           <div>
             <h2 className="eyebrow mb-4">Items</h2>
             <ul className="space-y-4">
-              {order.order_items.map((item: any) => (
-                <li key={item.id} className="flex justify-between gap-4 text-base md:text-sm">
+              {order.items?.map((item: any, idx: number) => (
+                <li key={item.id || idx} className="flex justify-between gap-4 text-base md:text-sm">
                   <span>
                     {item.name} × {item.qty}
                   </span>

@@ -12,7 +12,8 @@ function JournalPage() {
           Stories, ideas & inspiration for beautiful spaces
         </h1>
         <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground leading-relaxed">
-          Articles, design guides, and visual inspiration to help you style your spaces and discover interior ideas.
+          Articles, design guides, and visual inspiration to help you style your spaces and discover
+          interior ideas.
         </p>
       </section>
 
@@ -39,7 +40,10 @@ function JournalPage() {
                   {article.category} &middot; {article.date}
                 </span>
                 <h2 className="font-display text-2xl leading-snug mb-3 text-foreground shrink-0">
-                  <Link to={`/journal/${article.slug}`} className="hover:text-primary transition-colors">
+                  <Link
+                    to={`/journal/${article.slug}`}
+                    className="hover:text-primary transition-colors"
+                  >
                     {article.title}
                   </Link>
                 </h2>

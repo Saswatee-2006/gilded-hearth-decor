@@ -1,12 +1,15 @@
 import { Link, useParams } from "react-router-dom";
 
 import { ProductCard } from "@/components/site/ProductCard";
-import { CATEGORIES, IMAGES, PRODUCTS } from "@/lib/catalog";
+import { CATEGORIES, resolveImage } from "@/lib/catalog";
+import { useShop } from "@/lib/shop-store";
 
 function CategoryPage() {
   const { slug } = useParams<{ slug: string }>();
+  const { products: storeProducts, isLoadingProducts } = useShop();
+  
   const category = CATEGORIES.find((c) => c.slug === slug);
-  const products = PRODUCTS.filter((p) => p.category === slug);
+  const products = storeProducts.filter((p) => p.category === slug);
   const siblings = CATEGORIES.filter((c) => c.slug !== slug).slice(0, 6);
 
   if (!category) {
@@ -24,7 +27,7 @@ function CategoryPage() {
     <>
       <section className="relative">
         <img
-          src={IMAGES[category.image]}
+          src={resolveImage(category.image)}
           alt={category.name}
           width={1024}
           height={1024}
@@ -50,13 +53,19 @@ function CategoryPage() {
 
       <section className="mx-auto max-w-7xl px-4 py-6 md:py-10 md:px-8">
         {products.length === 0 ? (
-          <p className="text-sm text-muted-foreground">New pieces are on their way to this category.</p>
+          <p className="text-sm text-muted-foreground">
+            New pieces are on their way to this category.
+          </p>
         ) : (
-          <div className="grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-3 lg:grid-cols-4">
-            {products.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
+          isLoadingProducts ? (
+            <div className="py-20 text-center text-muted-foreground animate-pulse">Loading products...</div>
+          ) : (
+            <div className="grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-4">
+              {products.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          )
         )}
 
         <div className="mt-12">

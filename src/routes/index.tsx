@@ -1,21 +1,21 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Instagram, PackageCheck, RotateCcw, ShieldCheck, Sparkles, Truck } from "lucide-react";
+import {
+  ArrowRight,
+  Instagram,
+  PackageCheck,
+  RotateCcw,
+  ShieldCheck,
+  Sparkles,
+  Truck,
+} from "lucide-react";
 
 import { ProductCard } from "@/components/site/ProductCard";
 import { Reveal } from "@/components/site/Reveal";
 import { Button } from "@/components/ui/button";
 import hero from "@/assets/hero-living.jpg";
 import banner from "@/assets/banner-statement.jpg";
-import { CATEGORIES, IMAGES, PRODUCTS, ROOMS, STYLES, productsInCollection } from "@/lib/catalog";
-
-const featured = PRODUCTS.filter((p) => p.badges.includes("featured")).slice(0, 8);
-const bestsellers = PRODUCTS.filter((p) => p.badges.includes("bestseller")).slice(0, 4);
-const newArrivals = PRODUCTS.filter((p) => p.badges.includes("new")).slice(0, 4);
-const wallArt = PRODUCTS.filter((p) =>
-  ["posters", "canvas-art", "abstract-art", "wall-decor", "wall-hangings"].includes(
-    p.category,
-  ),
-).slice(0, 7);
+import { CATEGORIES, COLLECTIONS, IMAGES, ROOMS, STYLES, productsInCollection, resolveImage } from "@/lib/catalog";
+import { useShop } from "@/lib/shop-store";
 
 function SectionHead({
   eyebrow,
@@ -38,7 +38,7 @@ function SectionHead({
       {action && (
         <Button variant="link" className="px-0" asChild>
           {action.slug ? (
-            <Link to={`/collection/${action.slug }`}>
+            <Link to={`/collection/${action.slug}`}>
               {action.label} <ArrowRight className="ml-1 h-4 w-4" />
             </Link>
           ) : (
@@ -53,6 +53,15 @@ function SectionHead({
 }
 
 function Home() {
+  const { products, isLoadingProducts } = useShop();
+
+  const featured = products.filter((p) => p.badges?.includes("featured")).slice(0, 8);
+  const bestsellers = products.filter((p) => p.badges?.includes("bestseller")).slice(0, 4);
+  const newArrivals = products.filter((p) => p.badges?.includes("new")).slice(0, 4);
+  const wallArt = products.filter((p) =>
+    ["wall-clocks", "wall-decor", "frames", "posters", "canvas-art"].includes(p.category),
+  ).slice(0, 4);
+
   return (
     <>
       <div className="flex flex-col">
@@ -62,25 +71,40 @@ function Home() {
           {/* LEFT: Content (40%) */}
           <div className="relative z-10 flex w-full flex-col justify-start pt-12 pb-10 px-6 lg:justify-center lg:w-[40%] lg:px-16 xl:px-24 lg:py-16 shrink-0 bg-[#F7F4F0]">
             <Reveal>
-              <p className="eyebrow tracking-[0.3em] text-[#8C7764] font-medium">ELEVATE EVERYDAY LIVING</p>
-              
+              <p className="eyebrow tracking-[0.3em] text-[#8C7764] font-medium">
+                ELEVATE EVERYDAY LIVING
+              </p>
+
               <h1 className="mt-6 font-display text-[2.5rem] min-[400px]:text-[2.75rem] leading-[1.1] md:text-5xl lg:text-[3.25rem] xl:text-[3.75rem] lg:leading-[1.1] text-ink">
-                Timeless Décor<br />
-                for a More<br />
+                Timeless Décor
+                <br />
+                for a More
+                <br />
                 <i className="text-[#8C7764] italic">Beautiful You</i>
               </h1>
-              
+
               <div className="mt-6 h-[1px] w-12 bg-[#8C7764]/70" />
-              
+
               <p className="mt-6 max-w-[320px] text-[15px] leading-[1.6] text-muted-foreground/90 font-medium">
                 Thoughtfully chosen pieces that make every space feel like home.
               </p>
-              
+
               <div className="mt-8 flex flex-col lg:flex-row gap-3 lg:gap-4 items-stretch lg:items-center">
-                <Button size="lg" className="bg-[#8C7764] hover:bg-[#786350] text-white px-8 h-12 text-[13px] tracking-wide font-medium transition-colors rounded-none w-full lg:w-auto" asChild>
-                  <Link to="/shop">Shop Décor <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                <Button
+                  size="lg"
+                  className="bg-[#8C7764] hover:bg-[#786350] text-white px-8 h-12 text-[13px] tracking-wide font-medium transition-colors rounded-none w-full lg:w-auto"
+                  asChild
+                >
+                  <Link to="/shop">
+                    Shop Décor <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
                 </Button>
-                <Button size="lg" variant="outline" className="border-ink/20 text-ink hover:bg-ink/5 bg-transparent px-8 h-12 text-[13px] tracking-wide font-medium transition-colors rounded-none w-full lg:w-auto" asChild>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="border-ink/20 text-ink hover:bg-ink/5 bg-transparent px-8 h-12 text-[13px] tracking-wide font-medium transition-colors rounded-none w-full lg:w-auto"
+                  asChild
+                >
                   <Link to="/collection/luxury-decor">Explore Collections</Link>
                 </Button>
               </div>
@@ -122,7 +146,9 @@ function Home() {
               ))}
             </ul>
             <div className="text-[10px] tracking-[0.25em] text-[#8C7764] uppercase font-medium text-center lg:text-right leading-[1.6]">
-              Made with Love<br />Handle with Care
+              Made with Love
+              <br />
+              Handle with Care
             </div>
           </div>
         </section>
@@ -140,12 +166,12 @@ function Home() {
           {CATEGORIES.slice(0, 12).map((c, i) => (
             <Reveal key={c.slug} delay={i * 40}>
               <Link
-                to={`/category/${c.slug }`}
+                to={`/category/${c.slug}`}
                 className="group block overflow-hidden rounded-md bg-secondary min-w-0"
               >
                 <div className="relative">
                   <img
-                    src={IMAGES[c.image]}
+                    src={resolveImage(c.image)}
                     alt={c.name}
                     loading="lazy"
                     width={1024}
@@ -155,7 +181,8 @@ function Home() {
                   <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/70 to-transparent p-4">
                     <p className="font-display text-xl text-primary-foreground">{c.name}</p>
                     <p className="mt-1 flex items-center gap-1 text-[11px] tracking-[0.18em] text-primary-foreground/80 uppercase">
-                      Explore <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
+                      Explore{" "}
+                      <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
                     </p>
                   </div>
                 </div>
@@ -174,13 +201,17 @@ function Home() {
             copy="A short list of the pieces our stylists reach for first."
             action={{ label: "View all", to: "/shop" }}
           />
-          <div className="grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4">
-            {featured.map((p, i) => (
-              <Reveal key={p.id} delay={i * 40}>
-                <ProductCard product={p} />
-              </Reveal>
-            ))}
-          </div>
+          {isLoadingProducts ? (
+            <div className="py-20 text-center text-muted-foreground animate-pulse">Loading featured pieces...</div>
+          ) : (
+            <div className="grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4">
+              {featured.map((p, i) => (
+                <Reveal key={p.id} delay={i * 40}>
+                  <ProductCard product={p} />
+                </Reveal>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -195,7 +226,7 @@ function Home() {
                 className="group relative block overflow-hidden rounded-md min-w-0"
               >
                 <img
-                  src={IMAGES[CATEGORIES[(i * 3) % CATEGORIES.length]?.image ?? "canvas"]}
+                  src={resolveImage(CATEGORIES[(i * 3) % CATEGORIES.length]?.image ?? "canvas")}
                   alt={`${s.name} décor`}
                   loading="lazy"
                   width={1024}
@@ -228,7 +259,7 @@ function Home() {
                 className="group w-[80vw] max-w-[256px] shrink-0 snap-start overflow-hidden rounded-md md:w-auto"
               >
                 <img
-                  src={IMAGES[r.image]}
+                  src={resolveImage(r.image)}
                   alt={`${r.name} décor`}
                   loading="lazy"
                   width={1280}
@@ -255,11 +286,11 @@ function Home() {
           {wallArt.map((p) => (
             <Link
               key={p.id}
-              to={`/product/${p.slug }`}
+              to={`/product/${p.slug}`}
               className="group block break-inside-avoid overflow-hidden rounded-md min-w-0"
             >
               <img
-                src={IMAGES[p.image]}
+                src={resolveImage(p.image)}
                 alt={p.name}
                 loading="lazy"
                 width={1024}
@@ -281,13 +312,17 @@ function Home() {
             title="Most Loved"
             action={{ label: "View all", to: "/collection", slug: "trending-now" }}
           />
-          <div className="grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4">
-            {bestsellers.map((p, i) => (
-              <Reveal key={p.id} delay={i * 40}>
-                <ProductCard product={p} />
-              </Reveal>
-            ))}
-          </div>
+          {isLoadingProducts ? (
+            <div className="py-20 text-center text-muted-foreground animate-pulse">Loading bestsellers...</div>
+          ) : (
+            <div className="grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4">
+              {bestsellers.map((p, i) => (
+                <Reveal key={p.id} delay={i * 40}>
+                  <ProductCard product={p} />
+                </Reveal>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -305,14 +340,14 @@ function Home() {
         <Reveal className="absolute inset-0 flex items-center">
           <div className="mx-auto w-full max-w-7xl px-4 text-primary-foreground md:px-8">
             <p className="eyebrow text-primary-foreground/80">Limited collection</p>
-            <h2 className="mt-3 max-w-lg font-display text-4xl md:text-6xl">Designed to Be Noticed.</h2>
+            <h2 className="mt-3 max-w-lg font-display text-4xl md:text-6xl">
+              Designed to Be Noticed.
+            </h2>
             <p className="mt-4 max-w-md text-sm text-primary-foreground/85">
               Statement pieces that bring personality to your space.
             </p>
             <Button size="lg" className="mt-7" asChild>
-              <Link to="/collection/statement-pieces">
-                Explore the Collection
-              </Link>
+              <Link to="/collection/statement-pieces">Explore the Collection</Link>
             </Button>
           </div>
         </Reveal>
@@ -325,13 +360,17 @@ function Home() {
           title="New Arrivals"
           action={{ label: "View all", to: "/collection", slug: "trending-now" }}
         />
-        <div className="grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4">
-          {newArrivals.map((p, i) => (
-            <Reveal key={p.id} delay={i * 40}>
-              <ProductCard product={p} />
-            </Reveal>
-          ))}
-        </div>
+        {isLoadingProducts ? (
+          <div className="py-20 text-center text-muted-foreground animate-pulse">Loading arrivals...</div>
+        ) : (
+          <div className="grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4">
+            {newArrivals.map((p, i) => (
+              <Reveal key={p.id} delay={i * 40}>
+                <ProductCard product={p} />
+              </Reveal>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* COLLECTIONS STRIP */}
@@ -364,7 +403,7 @@ function Home() {
           {CATEGORIES.slice(0, 6).map((c) => (
             <div key={c.slug} className="relative overflow-hidden rounded-md">
               <img
-                src={IMAGES[c.image]}
+                src={resolveImage(c.image)}
                 alt={`Customer home styled with ${c.name}`}
                 loading="lazy"
                 width={1024}

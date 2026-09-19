@@ -1,7 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { PRODUCTS, getProductPrice, type Product } from "@/lib/catalog";
+import { getProductPrice, type Product } from "@/lib/catalog";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 export type CartLine = { id: string; qty: number; size?: string };
 export type Order = {
@@ -30,6 +32,8 @@ type ShopState = {
   cartProducts: { product: Product; qty: number; size?: string }[];
   isCartOpen: boolean;
   setIsCartOpen: (open: boolean) => void;
+  products: Product[];
+  isLoadingProducts: boolean;
 };
 
 const ShopContext = createContext<ShopState | null>(null);
@@ -38,7 +42,8 @@ const KEY = "aarohan-shop-v1";
 type Persisted = Pick<ShopState, "cart" | "wishlist" | "orders" | "recentlyViewed">;
 
 function load(): Persisted {
-  if (typeof window === "undefined") return { cart: [], wishlist: [], orders: [], recentlyViewed: [] };
+  if (typeof window === "undefined")
+    return { cart: [], wishlist: [], orders: [], recentlyViewed: [] };
   try {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) throw new Error("empty");
@@ -69,6 +74,17 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
     setHydrated(true);
   }, []);
 
+  const { data: fetchedProducts, isLoading: isLoadingProducts } = useQuery({
+    queryKey: ["public-products"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("products").select("*").order("name");
+      if (error) throw error;
+      return (data as Product[]) || [];
+    },
+  });
+
+  const products = fetchedProducts || [];
+
   useEffect(() => {
     if (!hydrated) return;
     window.localStorage.setItem(KEY, JSON.stringify(state));
@@ -82,14 +98,17 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
         : [...s.cart, { id, qty, size }];
       return { ...s, cart };
     });
-    const p = PRODUCTS.find((x) => x.id === id);
+    const p = products.find((x) => x.id === id);
     toast.success(p ? `${p.name} added to bag` : "Added to bag");
-  }, []);
+  }, [products]);
 
   const setQty = useCallback((id: string, qty: number, size?: string) => {
     setState((s) => ({
       ...s,
-      cart: qty <= 0 ? s.cart.filter((l) => !(l.id === id && l.size === size)) : s.cart.map((l) => (l.id === id && l.size === size ? { ...l, qty } : l)),
+      cart:
+        qty <= 0
+          ? s.cart.filter((l) => !(l.id === id && l.size === size))
+          : s.cart.map((l) => (l.id === id && l.size === size ? { ...l, qty } : l)),
     }));
   }, []);
 
@@ -109,7 +128,10 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const markViewed = useCallback((id: string) => {
-    setState((s) => ({ ...s, recentlyViewed: [id, ...s.recentlyViewed.filter((x) => x !== id)].slice(0, 8) }));
+    setState((s) => ({
+      ...s,
+      recentlyViewed: [id, ...s.recentlyViewed.filter((x) => x !== id)].slice(0, 8),
+    }));
   }, []);
 
   const placeOrder = useCallback(
@@ -120,25 +142,30 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
         total,
         status: "Confirmed",
         lines: state.cart.map((l) => {
-          const p = PRODUCTS.find((x) => x.id === l.id);
-          return { name: p?.name ?? "Item", qty: l.qty, price: p ? getProductPrice(p, l.size) : 0, size: l.size };
+          const p = products.find((x) => x.id === l.id);
+          return {
+            name: p?.name ?? "Item",
+            qty: l.qty,
+            price: p ? getProductPrice(p, l.size) : 0,
+            size: l.size,
+          };
         }),
       };
       setState((s) => ({ ...s, orders: [order, ...s.orders], cart: [] }));
       return order;
     },
-    [state.cart],
+    [state.cart, products],
   );
 
   const cartProducts = useMemo(
     () =>
       state.cart
         .map((l) => {
-          const product = PRODUCTS.find((p) => p.id === l.id);
+          const product = products.find((p) => p.id === l.id);
           return product ? { product, qty: l.qty, size: l.size } : null;
         })
         .filter((x): x is { product: Product; qty: number; size?: string } => x !== null),
-    [state.cart],
+    [state.cart, products],
   );
 
   const subtotal = useMemo(
@@ -161,6 +188,8 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
     cartProducts,
     isCartOpen,
     setIsCartOpen,
+    products,
+    isLoadingProducts,
   };
 
   return <ShopContext.Provider value={value}>{children}</ShopContext.Provider>;

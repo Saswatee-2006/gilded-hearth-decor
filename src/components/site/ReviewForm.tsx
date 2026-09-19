@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";;
+import { Link } from "react-router-dom";
 import { Star } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "@/integrations/supabase/client";
+// Removed supabase import
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
@@ -19,26 +19,27 @@ export function CustomerReviews({ productSlug }: { productSlug: string }) {
   const reviewsQuery = useQuery({
     queryKey: ["reviews", productSlug],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("reviews")
-        .select("id, author_name, rating, body, created_at")
-        .eq("product_slug", productSlug)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      // Mock local storage fetch
+      const saved = localStorage.getItem("mock_reviews_" + productSlug);
+      return saved ? JSON.parse(saved) : [];
     },
   });
 
   const submit = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("reviews").insert({
+      // Mock local storage save
+      const existing = localStorage.getItem("mock_reviews_" + productSlug);
+      const reviews = existing ? JSON.parse(existing) : [];
+      reviews.unshift({
+        id: "rev_" + Math.random().toString(36).substr(2, 9),
         user_id: user!.id,
         product_slug: productSlug,
         author_name: user!.email?.split("@")[0] ?? "Customer",
         rating,
         body: body.trim().slice(0, 1000),
+        created_at: new Date().toISOString()
       });
-      if (error) throw error;
+      localStorage.setItem("mock_reviews_" + productSlug, JSON.stringify(reviews));
     },
     onSuccess: () => {
       setBody("");
@@ -53,7 +54,7 @@ export function CustomerReviews({ productSlug }: { productSlug: string }) {
     <div>
       {(reviewsQuery.data?.length ?? 0) > 0 && (
         <ul className="mb-8 space-y-6">
-          {reviewsQuery.data?.map((r) => (
+          {reviewsQuery.data?.map((r: any) => (
             <li key={r.id} className="border-b pb-5">
               <div className="flex items-center gap-2">
                 {[1, 2, 3, 4, 5].map((s) => (
@@ -90,10 +91,7 @@ export function CustomerReviews({ productSlug }: { productSlug: string }) {
             {[1, 2, 3, 4, 5].map((s) => (
               <button key={s} type="button" aria-label={`${s} star`} onClick={() => setRating(s)}>
                 <Star
-                  className={cn(
-                    "h-5 w-5",
-                    s <= rating ? "fill-brass text-brass" : "text-border",
-                  )}
+                  className={cn("h-5 w-5", s <= rating ? "fill-brass text-brass" : "text-border")}
                 />
               </button>
             ))}

@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import { Heart, Minus, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Footer } from "@/components/site/Footer";
+import { resolveImage } from "@/lib/catalog";
 import { IMAGES, formatINR, getProductPrice } from "@/lib/catalog";
 import { FREE_SHIPPING_THRESHOLD, useShop } from "@/lib/shop-store";
 
@@ -35,9 +37,9 @@ function CartPage() {
         <ul className="space-y-6">
           {cartProducts.map(({ product, qty, size }) => (
             <li key={product.id + (size || "")} className="flex gap-4 border-b pb-6">
-              <Link to={`/product/${product.slug }`} className="shrink-0">
+              <Link to={`/product/${product.slug}`} className="shrink-0">
                 <img
-                  src={IMAGES[product.image]}
+                  src={resolveImage(product.image)}
                   alt={product.name}
                   loading="lazy"
                   width={1024}
@@ -48,33 +50,47 @@ function CartPage() {
               <div className="min-w-0 flex-1">
                 <p className="eyebrow">{product.subcategory}</p>
                 <h2 className="font-display text-xl">
-                  <Link to={`/product/${product.slug }`} className="link-underline">
+                  <Link to={`/product/${product.slug}`} className="link-underline">
                     {product.name} {size ? `(${size})` : ""}
                   </Link>
                 </h2>
-                <p className="mt-1 text-sm">
-                  {formatINR(getProductPrice(product, size))}
-                </p>
+                <p className="mt-1 text-sm">{formatINR(getProductPrice(product, size))}</p>
 
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   <div className="flex items-center rounded-sm border">
-                    <Button variant="ghost" size="icon" aria-label="Decrease" onClick={() => setQty(product.id, qty - 1, size)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Decrease"
+                      onClick={() => setQty(product.id, qty - 1, size)}
+                    >
                       <Minus className="h-4 w-4" />
                     </Button>
                     <span className="w-9 text-center text-sm">{qty}</span>
-                    <Button variant="ghost" size="icon" aria-label="Increase" onClick={() => setQty(product.id, qty + 1, size)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Increase"
+                      onClick={() => setQty(product.id, qty + 1, size)}
+                    >
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => toggleWishlist(product.id)}>
                     <Heart className="mr-1.5 h-4 w-4" /> Wishlist
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => removeFromCart(product.id, size)}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeFromCart(product.id, size)}
+                  >
                     <Trash2 className="mr-1.5 h-4 w-4" /> Remove
                   </Button>
                 </div>
               </div>
-              <p className="hidden w-24 text-right sm:block">{formatINR(getProductPrice(product, size) * qty)}</p>
+              <p className="hidden w-24 text-right sm:block">
+                {formatINR(getProductPrice(product, size) * qty)}
+              </p>
             </li>
           ))}
         </ul>
@@ -98,7 +114,10 @@ function CartPage() {
 
           <div className="mt-5">
             <div className="h-1.5 rounded-full bg-secondary">
-              <div className="h-full rounded-full bg-accent transition-all duration-500" style={{ width: `${progress}%` }} />
+              <div
+                className="h-full rounded-full bg-accent transition-all duration-500"
+                style={{ width: `${progress}%` }}
+              />
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
               {remaining > 0

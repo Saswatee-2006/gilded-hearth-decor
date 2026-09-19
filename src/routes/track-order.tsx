@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
+// Removed supabase import
 import { formatINR } from "@/lib/catalog";
 import { useMutation } from "@tanstack/react-query";
 
@@ -15,13 +15,16 @@ function TrackOrderPage() {
 
   const lookup = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("order_number, status, total, created_at")
-        .eq("order_number", orderNumber.trim().toUpperCase())
-        .maybeSingle();
-      if (error) throw error;
-      return data;
+      const existing = localStorage.getItem("mock_orders");
+      const orders = existing ? JSON.parse(existing) : [];
+      const data = orders.find((o: any) => o.order_number === orderNumber.trim().toUpperCase());
+      if (!data) return null;
+      return {
+        order_number: data.order_number,
+        status: data.status || "processing",
+        total: data.total,
+        created_at: data.created_at
+      };
     },
   });
 
@@ -81,7 +84,10 @@ function TrackOrderPage() {
             {STAGES.map((s, i) => {
               const reached = STAGES.indexOf(lookup.data!.status) >= i;
               return (
-                <li key={s} className={reached ? "text-foreground font-medium" : "text-muted-foreground"}>
+                <li
+                  key={s}
+                  className={reached ? "text-foreground font-medium" : "text-muted-foreground"}
+                >
                   {reached ? "●" : "○"} <span className="capitalize">{s}</span>
                 </li>
               );

@@ -38,7 +38,7 @@ import ArticlePage from "./routes/journal.$slug";
 function SiteLayout() {
   const location = useLocation();
   const isHomePage = location.pathname === "/";
-  
+
   return (
     <div className="flex min-h-screen flex-col w-full max-w-full">
       <Header />
@@ -87,7 +87,7 @@ function SplashHandler() {
         setTimeout(() => splash.remove(), 800);
       }
     }, 1800);
-    
+
     return () => clearTimeout(timer);
   }, []);
 
@@ -97,7 +97,7 @@ function SplashHandler() {
 const queryClient = new QueryClient();
 
 export function App() {
-  // Ensure the splash screen has an absolute maximum fail-safe timeout 
+  // Ensure the splash screen has an absolute maximum fail-safe timeout
   // in case something outside React blocks initialization indefinitely.
   // This satisfies the requirement that it "cannot remain stuck indefinitely".
   useEffect(() => {
@@ -130,12 +130,12 @@ export function App() {
                   <Route path="checkout" element={<CheckoutPage />} />
                   <Route path="auth" element={<AuthPage />} />
                   <Route path="wishlist" element={<WishlistPage />} />
-                  
+
                   {/* Authenticated Routes - we will handle auth guards in components */}
                   <Route path="account" element={<AccountPage />} />
                   <Route path="order/:id" element={<OrderDetailPage />} />
-                  <Route path="admin" element={<AdminPage />} />
-                  
+                  <Route path="admin/*" element={<AdminPage />} />
+
                   <Route path="journal" element={<JournalPage />} />
                   <Route path="journal/:slug" element={<ArticlePage />} />
 
@@ -146,7 +146,7 @@ export function App() {
                   <Route path="returns" element={<ReturnsPage />} />
                   <Route path="shipping" element={<ShippingPage />} />
                   <Route path="policies" element={<PoliciesPage />} />
-                  
+
                   <Route path="*" element={<NotFoundComponent />} />
                 </Route>
               </Routes>

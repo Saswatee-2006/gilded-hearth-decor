@@ -32,9 +32,7 @@ function ArticlePage() {
         <h1 className="mt-4 font-display text-4xl md:text-5xl lg:text-6xl leading-[1.1] text-foreground">
           {article.title}
         </h1>
-        <p className="mt-6 text-sm text-muted-foreground tracking-wide uppercase">
-          {article.date}
-        </p>
+        <p className="mt-6 text-sm text-muted-foreground tracking-wide uppercase">{article.date}</p>
       </header>
 
       {/* Hero Image */}

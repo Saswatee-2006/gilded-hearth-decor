@@ -1,5 +1,3 @@
-;
-
 import { Block, PageShell } from "@/components/site/PageShell";
 
 function ReturnsPage() {
@@ -17,8 +15,8 @@ function ReturnsPage() {
       </Block>
       <Block heading="Damaged in transit">
         <p>
-          Send a photo within 48 hours of delivery and we'll ship a replacement at no cost, or refund you
-          in full.
+          Send a photo within 48 hours of delivery and we'll ship a replacement at no cost, or
+          refund you in full.
         </p>
       </Block>
       <Block heading="Refunds">

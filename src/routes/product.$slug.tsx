@@ -4,43 +4,90 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { ProductCard } from "@/components/site/ProductCard";
+import { Footer } from "@/components/site/Footer";
+import { resolveImage } from "@/lib/catalog";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import {
   IMAGES,
   completeTheLook,
   formatINR,
-  getProduct,
   getProductPrice,
-  relatedProducts,
 } from "@/lib/catalog";
 import { useShop } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 function ProductPage() {
-  const { slug } = useParams();
-  const product = getProduct(slug)!;
-  const { addToCart, toggleWishlist, isWishlisted, markViewed } = useShop();
-  const { user } = useAuth();
+  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  
-  const hasA4 = product.category === 'posters' || product.name === 'Golden Swirl Resin Wall Art';
-  const hasXL = product.category === 'wall-clocks' || product.category === 'wall-decor';
+  const { addToCart, isWishlisted, toggleWishlist, markViewed, products, isLoadingProducts } = useShop();
+  const { user } = useAuth();
+
+  const product = products.find((p) => p.slug === slug);
+  const related = products
+    .filter((x) => x.id !== product?.id && (x.category === product?.category || x.style === product?.style))
+    .slice(0, 4);
+
+  const hasA4 = product ? (product.category === "posters" || product.name === "Golden Swirl Resin Wall Art") : false;
+  const hasXL = product ? (product.category === "wall-clocks" || product.category === "wall-decor") : false;
   const hasSize = hasA4 || hasXL;
 
   const [qty, setQty] = useState(1);
-  const [size, setSize] = useState<string>(
-    hasA4 ? "A4" : hasXL ? "XL" : ""
-  );
+  const [size, setSize] = useState<string>(hasA4 ? "A4" : hasXL ? "XL" : "");
   const [zoom, setZoom] = useState(false);
 
+  const { data: inventoryData, isLoading: isLoadingInventory, error: inventoryError } = useQuery({
+    queryKey: ["product-inventory", product?.id],
+    enabled: !!product?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("inventory")
+        .select("stock")
+        .eq("product_id", product!.id)
+        .eq("variant", "Default")
+        .maybeSingle();
+      
+      if (error) {
+        console.error("Failed to fetch inventory:", error);
+        throw error;
+      }
+      return data;
+    },
+  });
+
+  const currentStock = inventoryData?.stock ?? 0;
+
   useEffect(() => {
-    markViewed(product.id);
-    setQty(1);
-    const _hasA4 = product.category === 'posters' || product.name === 'Golden Swirl Resin Wall Art';
-    const _hasXL = product.category === 'wall-clocks' || product.category === 'wall-decor';
-    setSize(_hasA4 ? "A4" : _hasXL ? "XL" : "");
-  }, [product.id, markViewed, product.category, product.name]);
+    if (product) {
+      markViewed(product.id);
+      setQty(1);
+      const _hasA4 = product.category === "posters" || product.name === "Golden Swirl Resin Wall Art";
+      const _hasXL = product.category === "wall-clocks" || product.category === "wall-decor";
+      setSize(_hasA4 ? "A4" : _hasXL ? "XL" : "");
+    }
+  }, [product, markViewed]);
+
+  if (isLoadingProducts) {
+    return (
+      <div className="py-20 text-center">
+        <p className="font-display text-2xl text-muted-foreground animate-pulse">Loading piece...</p>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="py-20 text-center">
+        <h1 className="font-display text-2xl">Product not found</h1>
+        <p className="mt-2 text-muted-foreground">The piece you are looking for does not exist or has been removed.</p>
+        <Button asChild className="mt-6">
+          <Link to="/shop">Back to Shop</Link>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 md:px-8">
@@ -53,11 +100,11 @@ function ProductPage() {
           Shop
         </Link>
         <span>/</span>
-        <Link to={`/category/${product.category }`} className="hover:text-foreground">
-          {product.category.replace(/-/g, " ")}
+        <Link to={`/category/${product.category}`} className="hover:text-foreground">
+          {product.category?.replace(/-/g, " ") || "uncategorized"}
         </Link>
         <span>/</span>
-        <span className="text-foreground">{product.name}</span>
+        <span className="text-foreground">{product.name || "Unknown"}</span>
       </nav>
 
       <div className="mt-8 grid gap-10 lg:grid-cols-2">
@@ -69,7 +116,7 @@ function ProductPage() {
             onMouseLeave={() => setZoom(false)}
           >
             <img
-              src={IMAGES[product.image]}
+              src={resolveImage(product.image)}
               alt={product.name}
               width={1024}
               height={1024}
@@ -83,37 +130,56 @@ function ProductPage() {
 
         {/* Details */}
         <div>
-          <p className="eyebrow">{product.subcategory}</p>
-          <h1 className="mt-2 font-display text-3xl md:text-5xl">{product.name}</h1>
+          <p className="eyebrow">{product.subcategory || "Home Decor"}</p>
+          <h1 className="mt-2 font-display text-3xl md:text-5xl">{product.name || "Unknown"}</h1>
 
           <div className="mt-5 flex flex-wrap items-baseline gap-3">
-            <span className="font-display text-4xl">{formatINR(getProductPrice(product, hasSize ? size : undefined))}</span>
+            <span className="font-display text-4xl">
+              {formatINR(getProductPrice(product, hasSize ? size : undefined))}
+            </span>
           </div>
 
-          <p className="mt-6 text-sm leading-relaxed text-muted-foreground">{product.description}</p>
+          <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
+            {product.description || "No description available."}
+          </p>
 
           <dl className="mt-6 grid grid-cols-2 gap-y-3 text-sm">
             {[
               ["Material", product.material],
-              ["Dimensions", hasA4 ? (size === 'A4' ? '21 × 29.7 cm' : '14.8 × 21 cm') : hasXL ? undefined : product.dimensions],
+              [
+                "Dimensions",
+                hasA4
+                  ? size === "A4"
+                    ? "21 × 29.7 cm"
+                    : "14.8 × 21 cm"
+                  : hasXL
+                    ? undefined
+                    : product.dimensions,
+              ],
               ["Weight", product.weight],
               ["Colour", product.color],
               ["Style", product.style],
               ["Care", product.care],
-            ].filter(([, v]) => v).map(([k, v]) => (
-              <div key={k as string} className="pr-4">
-                <dt className="eyebrow">{k}</dt>
-                <dd className="mt-1 capitalize">{v as string}</dd>
-              </div>
-            ))}
+            ]
+              .filter(([, v]) => v)
+              .map(([k, v]) => (
+                <div key={k as string} className="pr-4">
+                  <dt className="eyebrow">{k}</dt>
+                  <dd className="mt-1 capitalize">{v as string}</dd>
+                </div>
+              ))}
           </dl>
 
           <div className="mt-8">
             <p className="text-sm mb-4">
-              {product.stock > 5 ? (
+              {isLoadingInventory ? (
+                <span className="text-muted-foreground animate-pulse">Checking stock...</span>
+              ) : inventoryError ? (
+                <span className="text-muted-foreground">Stock information unavailable</span>
+              ) : currentStock > 5 ? (
                 <span className="text-accent">In stock · ready to ship</span>
-              ) : product.stock > 0 ? (
-                <span className="text-accent">Only {product.stock} left</span>
+              ) : currentStock > 0 ? (
+                <span className="text-accent">Only {currentStock} left</span>
               ) : (
                 <span className="text-destructive">Out of stock</span>
               )}
@@ -125,13 +191,33 @@ function ProductPage() {
                 <div className="flex flex-wrap gap-2">
                   {hasA4 ? (
                     <>
-                      <Button variant={size === "A4" ? "default" : "outline"} onClick={() => setSize("A4")}>A4 — 21 × 29.7 cm</Button>
-                      <Button variant={size === "A5" ? "default" : "outline"} onClick={() => setSize("A5")}>A5 — 14.8 × 21 cm</Button>
+                      <Button
+                        variant={size === "A4" ? "default" : "outline"}
+                        onClick={() => setSize("A4")}
+                      >
+                        A4 — 21 × 29.7 cm
+                      </Button>
+                      <Button
+                        variant={size === "A5" ? "default" : "outline"}
+                        onClick={() => setSize("A5")}
+                      >
+                        A5 — 14.8 × 21 cm
+                      </Button>
                     </>
                   ) : (
                     <>
-                      <Button variant={size === "XL" ? "default" : "outline"} onClick={() => setSize("XL")}>XL</Button>
-                      <Button variant={size === "XXL" ? "default" : "outline"} onClick={() => setSize("XXL")}>XXL</Button>
+                      <Button
+                        variant={size === "XL" ? "default" : "outline"}
+                        onClick={() => setSize("XL")}
+                      >
+                        XL
+                      </Button>
+                      <Button
+                        variant={size === "XXL" ? "default" : "outline"}
+                        onClick={() => setSize("XXL")}
+                      >
+                        XXL
+                      </Button>
                     </>
                   )}
                 </div>
@@ -140,23 +226,37 @@ function ProductPage() {
 
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center rounded-sm border">
-                <Button variant="ghost" size="icon" aria-label="Decrease quantity" onClick={() => setQty((q) => Math.max(1, q - 1))}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Decrease quantity"
+                  onClick={() => setQty((q) => Math.max(1, q - 1))}
+                >
                   <Minus className="h-4 w-4" />
                 </Button>
                 <span className="w-10 text-center text-sm">{qty}</span>
-                <Button variant="ghost" size="icon" aria-label="Increase quantity" onClick={() => setQty((q) => q + 1)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Increase quantity"
+                  onClick={() => setQty((q) => q + 1)}
+                >
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
-              <Button size="lg" onClick={() => {
-                addToCart(product.id, qty, hasSize ? size : undefined);
-              }} disabled={product.stock === 0 || (hasSize && !size)}>
+              <Button
+                size="lg"
+                onClick={() => {
+                  addToCart(product.id, qty, hasSize ? size : undefined);
+                }}
+                disabled={currentStock === 0 || isLoadingInventory || (hasSize && !size)}
+              >
                 Add to Cart
               </Button>
               <Button
                 size="lg"
                 variant="secondary"
-                disabled={product.stock === 0 || (hasSize && !size)}
+                disabled={currentStock === 0 || isLoadingInventory || (hasSize && !size)}
                 onClick={() => {
                   addToCart(product.id, qty, hasSize ? size : undefined);
                   navigate("/checkout");
@@ -199,13 +299,11 @@ function ProductPage() {
         </div>
       </div>
 
-
-
       {/* Recommendations */}
       <section className="mt-10">
         <h2 className="font-display text-3xl">You May Also Like</h2>
         <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4">
-          {relatedProducts(product).map((p) => (
+          {related.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}
         </div>
@@ -214,7 +312,7 @@ function ProductPage() {
       <section className="mt-12">
         <h2 className="font-display text-3xl">Complete the Look</h2>
         <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4">
-          {completeTheLook(product).map((p) => (
+          {completeTheLook(products, product).map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}
         </div>

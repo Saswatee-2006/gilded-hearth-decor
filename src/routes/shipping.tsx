@@ -1,5 +1,3 @@
-;
-
 import { Block, PageShell } from "@/components/site/PageShell";
 
 function ShippingPage() {
@@ -21,8 +19,8 @@ function ShippingPage() {
       </Block>
       <Block heading="Tracking">
         <p>
-          You'll get a tracking link by email once your parcel leaves the studio. Signed-in customers can
-          also follow every order from their account.
+          You'll get a tracking link by email once your parcel leaves the studio. Signed-in
+          customers can also follow every order from their account.
         </p>
       </Block>
     </PageShell>

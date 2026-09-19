@@ -1,5 +1,3 @@
-;
-
 import { PageShell } from "@/components/site/PageShell";
 import {
   Accordion,

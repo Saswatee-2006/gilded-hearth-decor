@@ -16,7 +16,9 @@ export function PageShell({
       <p className="eyebrow">{eyebrow}</p>
       <h1 className="mt-3 font-display text-4xl md:text-5xl">{title}</h1>
       {intro && <p className="mt-4 text-muted-foreground">{intro}</p>}
-      <div className="mt-10 space-y-8 text-sm leading-relaxed text-muted-foreground">{children}</div>
+      <div className="mt-10 space-y-8 text-sm leading-relaxed text-muted-foreground">
+        {children}
+      </div>
     </div>
   );
 }

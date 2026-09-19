@@ -13,14 +13,17 @@ export function GlobalBackButton() {
   const handleBack = () => {
     // Check if there is meaningful history within the app by verifying React Router's internal state index
     const hasHistory = window.history.state && window.history.state.idx > 0;
-    
+
     if (hasHistory) {
       navigate(-1);
     } else {
       // Sensible fallbacks when opening a deep link directly
       if (location.pathname.startsWith("/product/")) {
         navigate("/shop");
-      } else if (location.pathname.startsWith("/category/") || location.pathname.startsWith("/collection/")) {
+      } else if (
+        location.pathname.startsWith("/category/") ||
+        location.pathname.startsWith("/collection/")
+      ) {
         navigate("/shop");
       } else if (location.pathname.startsWith("/checkout")) {
         navigate("/cart");
