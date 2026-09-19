@@ -24,6 +24,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/auth";
 import { formatINR } from "@/lib/catalog";
 import { supabase } from "@/integrations/supabase/client";
@@ -61,7 +67,7 @@ const playNotificationSound = () => {
     playBeep(659.25, 0.15, 0.4);
     playBeep(1046.50, 0.3, 0.6);
   } catch (e) {
-    console.error("Audio playback failed", e);
+    console.error("[ORDER REALTIME] Audio playback failed", e);
   }
 };
 
@@ -75,12 +81,18 @@ function AdminPage() {
   const [soundEnabled, setSoundEnabled] = useState(() => {
     return localStorage.getItem("admin_sound_enabled") === "true";
   });
+  const soundEnabledRef = useRef(soundEnabled);
+  const [recentNotifications, setRecentNotifications] = useState<any[]>([]);
 
   const toggleSound = () => {
     const next = !soundEnabled;
     setSoundEnabled(next);
+    soundEnabledRef.current = next;
     localStorage.setItem("admin_sound_enabled", next.toString());
     if (next) {
+      if ("Notification" in window) {
+        Notification.requestPermission();
+      }
       playNotificationSound();
       toast.success("Alert sound enabled");
     } else {
@@ -92,6 +104,8 @@ function AdminPage() {
   useEffect(() => {
     if (!isAdmin) return;
     
+    console.log("[ORDER REALTIME] Subscription started");
+
     // Orders channel
     const ordersChannel = supabase
       .channel("public:orders")
@@ -100,23 +114,55 @@ function AdminPage() {
         { event: "INSERT", schema: "public", table: "orders" },
         (payload) => {
           const newOrder = payload.new as any;
-          if (processedOrders.current.has(newOrder.id)) return;
+          if (processedOrders.current.has(newOrder.id)) {
+            console.log(`[ORDER REALTIME] Duplicate ignored: ${newOrder.id}`);
+            return;
+          }
           processedOrders.current.add(newOrder.id);
+          console.log(`[ORDER REALTIME] New order received: ${newOrder.id}`);
           
-          if (soundEnabled) {
+          if (soundEnabledRef.current) {
+            console.log(`[ORDER REALTIME] Sound triggered`);
             playNotificationSound();
           }
           
+          console.log(`[ORDER REALTIME] Popup triggered`);
           toast.success(
             <div className="flex flex-col gap-1">
               <span className="font-bold text-[13px]">🔔 NEW ORDER RECEIVED</span>
               <span className="text-[13px]">Order #{newOrder.order_number}</span>
               <span className="text-[13px]">Amount: {formatINR(newOrder.total || 0)}</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2 h-7 text-[11px]" 
+                onClick={() => {
+                  window.location.hash = ""; // just to be safe
+                  document.getElementById("admin-orders-link")?.click();
+                }}
+              >
+                View Orders
+              </Button>
             </div>,
             { duration: 8000 }
           );
+
+          if ("Notification" in window && Notification.permission === "granted") {
+            console.log(`[ORDER REALTIME] Browser notification triggered`);
+            new Notification("New Order Received", {
+              body: `Order #${newOrder.order_number} — ${formatINR(newOrder.total || 0)}`,
+            });
+          }
+
+          setRecentNotifications(prev => [
+            { id: newOrder.id, order_number: newOrder.order_number, total: newOrder.total, time: new Date() },
+            ...prev
+          ].slice(0, 10));
           
-          queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+          queryClient.setQueryData(["admin-orders"], (old: any) => {
+            if (!old) return [newOrder];
+            return [newOrder, ...old];
+          });
         }
       )
       .on(
@@ -169,6 +215,7 @@ function AdminPage() {
         .select("*, order_items(*)")
         .order("created_at", { ascending: false });
       if (error) throw error;
+      data?.forEach(o => processedOrders.current.add((o as any).id));
       return (data as any[]) || [];
     },
   });
@@ -307,7 +354,7 @@ function AdminPage() {
             asChild
             className={`justify-start ${location.pathname.startsWith('/admin/orders') ? 'text-foreground bg-accent/5' : 'text-muted-foreground hover:text-foreground'}`}
           >
-            <Link to="/admin/orders">
+            <Link to="/admin/orders" id="admin-orders-link">
               <ShoppingCart className="mr-3 h-4 w-4" /> Orders
               {pendingOrders > 0 && (
                 <span className="ml-auto bg-accent text-accent-foreground text-[10px] px-2 py-0.5 rounded-full">
@@ -362,12 +409,34 @@ function AdminPage() {
             <Button variant="outline" size="sm" className="hidden lg:flex text-xs h-8" onClick={playNotificationSound}>
               Test Sound
             </Button>
-            <Button variant="ghost" size="icon" className="relative h-8 w-8">
-              <Bell className="h-4 w-4 text-muted-foreground" />
-              {pendingOrders > 0 && (
-                <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-accent" />
-              )}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative h-8 w-8">
+                  <Bell className="h-4 w-4 text-muted-foreground" />
+                  {recentNotifications.length > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] text-accent-foreground font-bold">
+                      {recentNotifications.length}
+                    </span>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-border/50">
+                  <span className="text-xs font-semibold">Notifications</span>
+                  <Button variant="ghost" size="sm" className="h-5 text-[10px]" onClick={() => setRecentNotifications([])}>Clear</Button>
+                </div>
+                {recentNotifications.length === 0 ? (
+                  <div className="py-4 text-center text-xs text-muted-foreground">No new notifications</div>
+                ) : (
+                  recentNotifications.map(n => (
+                    <DropdownMenuItem key={n.id} className="flex flex-col items-start gap-1 p-3 cursor-pointer" onClick={() => navigate("/admin/orders")}>
+                      <span className="font-semibold text-xs">New Order #{n.order_number}</span>
+                      <span className="text-[10px] text-muted-foreground">{formatINR(n.total || 0)} • {n.time.toLocaleTimeString()}</span>
+                    </DropdownMenuItem>
+                  ))
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button variant="default" size="sm" className="hidden md:flex text-xs h-8" asChild>
               <Link to="/" target="_blank">View Storefront</Link>
             </Button>
