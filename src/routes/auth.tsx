@@ -75,51 +75,70 @@ function AuthPage() {
     );
   }
 
+  function normalizeIndianPhone(raw: string): string {
+    let digits = raw.replace(/\D/g, "");
+    if (digits.startsWith("91") && digits.length > 10) {
+      digits = digits.substring(2);
+    } else if (digits.startsWith("0") && digits.length > 10) {
+      digits = digits.substring(1);
+    }
+    if (digits.length !== 10) {
+      throw new Error("Invalid phone number. Please enter a valid 10-digit Indian mobile number.");
+    }
+    return `+91${digits}`;
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setIsLoggingIn(true);
     try {
-      if (mode === "legacy-email" || mode === "signin") {
+      if (mode === "legacy-email") {
         if (!form.email || !form.password) {
           throw new Error("Email and password are required.");
         }
-        const { data: authData, error } = await supabase.auth.signInWithPassword({
+        const { error } = await supabase.auth.signInWithPassword({
           email: form.email.trim(),
           password: form.password,
         });
         if (error) throw error;
         toast.success("Welcome back");
-        
-        if (authData.user) {
-          // Success! The onAuthStateChange listener in AuthProvider will pick this up.
-          // It will set loading=true, fetch the admin profile, and then set isAdmin.
-          // Once loading completes, the useEffect above will seamlessly navigate the user 
-          // to either /admin or / without race conditions!
+      } else if (mode === "signin") {
+        if (!form.phone || !form.password) {
+          throw new Error("Mobile number and password are required.");
         }
+        const normalizedPhone = normalizeIndianPhone(form.phone);
+        const { error } = await supabase.auth.signInWithPassword({
+          phone: normalizedPhone,
+          password: form.password,
+        });
+        if (error) throw error;
+        toast.success("Welcome back");
       } else if (mode === "signup") {
-        if (!form.email || !form.password || !form.name) {
-          throw new Error("Name, email, and password are required for signup.");
+        if (!form.phone || !form.password || !form.name) {
+          throw new Error("Name, mobile number, and password are required for signup.");
         }
+        const normalizedPhone = normalizeIndianPhone(form.phone);
         const { data, error } = await supabase.auth.signUp({
-          email: form.email.trim(),
+          phone: normalizedPhone,
           password: form.password,
           options: {
             data: {
               full_name: form.name.trim(),
+              email: form.email ? form.email.trim() : undefined,
             }
           }
         });
         if (error) throw error;
         
-        if (data.user && data.user.identities && data.user.identities.length === 0) {
-          throw new Error("This email is already registered. Please sign in.");
-        }
-        
-        toast.success("Account created successfully! Check your email to verify if required.");
+        toast.success("Account created successfully!");
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Something went wrong");
+      if (err instanceof Error && err.message.includes("Phone logins are disabled")) {
+        toast.error("Phone Provider is disabled in Supabase. Please enable it in Authentication > Providers.");
+      } else {
+        toast.error(err instanceof Error ? err.message : "Something went wrong");
+      }
     } finally {
       setBusy(false);
       setIsLoggingIn(false);
@@ -180,14 +199,31 @@ function AuthPage() {
               />
             </div>
             <div>
+              <Label htmlFor="phone" className="text-xs">
+                Mobile Number <span className="text-red-500">*</span>
+              </Label>
+              <div className="relative mt-1.5">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">+91</span>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={form.phone}
+                  required
+                  maxLength={15}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  className="pl-10"
+                  placeholder="9999999999"
+                />
+              </div>
+            </div>
+            <div>
               <Label htmlFor="email" className="text-xs">
-                Email Address <span className="text-red-500">*</span>
+                Email Address (Optional)
               </Label>
               <Input
                 id="email"
                 type="email"
                 value={form.email}
-                required
                 maxLength={255}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 className="mt-1.5"
@@ -215,8 +251,67 @@ function AuthPage() {
           </form>
         )}
 
-        {/* Login Form */}
-        {(mode === "legacy-email" || mode === "signin") && (
+        {/* Login Form (Phone) */}
+        {mode === "signin" && (
+          <form onSubmit={submit} className="space-y-4">
+            <div>
+              <Label htmlFor="phone" className="text-xs">
+                Mobile Number
+              </Label>
+              <div className="relative mt-1.5">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">+91</span>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={form.phone}
+                  required
+                  maxLength={10}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, '') })}
+                  className="pl-10"
+                  placeholder="9999999999"
+                />
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-xs">
+                  Password
+                </Label>
+                <button
+                  type="button"
+                  onClick={() => setMode("forgot")}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+              <Input
+                id="password"
+                type="password"
+                value={form.password}
+                required
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                className="mt-1.5"
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={busy}>
+              Sign In
+            </Button>
+            
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                onClick={() => setMode("legacy-email")}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Use email instead
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Legacy Email Form */}
+        {mode === "legacy-email" && (
           <form onSubmit={submit} className="space-y-4">
             <div>
               <Label htmlFor="email" className="text-xs">

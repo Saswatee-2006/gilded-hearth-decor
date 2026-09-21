@@ -14,6 +14,8 @@ import {
   Box,
   Settings as SettingsIcon,
   Search,
+  Sparkles,
+  X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -73,27 +75,27 @@ const playNotificationSound = () => {
 
 const activeAlerts = new Map<string, number>();
 
-const stopNewOrderAlert = (orderId: string) => {
-  if (activeAlerts.has(orderId)) {
-    window.clearInterval(activeAlerts.get(orderId)!);
-    activeAlerts.delete(orderId);
-    console.log(`[ORDER REALTIME] Sound stopped for: ${orderId}`);
+const stopAlert = (id: string) => {
+  if (activeAlerts.has(id)) {
+    window.clearInterval(activeAlerts.get(id)!);
+    activeAlerts.delete(id);
+    console.log(`[ORDER REALTIME] Sound stopped for: ${id}`);
   }
 };
 
-const startNewOrderAlert = (orderId: string) => {
-  if (activeAlerts.has(orderId)) return;
+const startAlert = (id: string) => {
+  if (activeAlerts.has(id)) return;
   
   playNotificationSound();
   const intervalId = window.setInterval(() => {
     playNotificationSound();
   }, 1200);
   
-  activeAlerts.set(orderId, intervalId);
-  console.log(`[ORDER REALTIME] Sound started looping for: ${orderId}`);
+  activeAlerts.set(id, intervalId);
+  console.log(`[ORDER REALTIME] Sound started looping for: ${id}`);
   
   setTimeout(() => {
-    stopNewOrderAlert(orderId);
+    stopAlert(id);
   }, 6000);
 };
 
@@ -103,12 +105,16 @@ function AdminPage() {
   const location = useLocation();
   const queryClient = useQueryClient();
   
-  const processedOrders = useRef<Set<string>>(new Set());
+  const processedEvents = useRef<Set<string>>(new Set());
   const [soundEnabled, setSoundEnabled] = useState(() => {
     return localStorage.getItem("admin_sound_enabled") === "true";
   });
   const soundEnabledRef = useRef(soundEnabled);
   const [recentNotifications, setRecentNotifications] = useState<any[]>([]);
+  const [activePopups, setActivePopups] = useState<any[]>([]);
+
+  const addPopup = (popup: any) => setActivePopups(prev => [...prev, popup]);
+  const removePopup = (id: string) => setActivePopups(prev => prev.filter(p => p.id !== id));
 
   const toggleSound = () => {
     const next = !soundEnabled;
@@ -116,10 +122,7 @@ function AdminPage() {
     soundEnabledRef.current = next;
     localStorage.setItem("admin_sound_enabled", next.toString());
     if (next) {
-      if ("Notification" in window) {
-        Notification.requestPermission();
-      }
-      startNewOrderAlert("test-sound-id");
+      startAlert("test-sound-id");
       toast.success("Alert sound enabled (6-second test)");
     } else {
       toast("Alert sound disabled");
@@ -140,47 +143,27 @@ function AdminPage() {
         { event: "INSERT", schema: "public", table: "orders" },
         (payload) => {
           const newOrder = payload.new as any;
-          if (processedOrders.current.has(newOrder.id)) {
-            console.log(`[ORDER REALTIME] Duplicate ignored: ${newOrder.id}`);
+          const eventId = `order:${newOrder.id}`;
+          if (processedEvents.current.has(eventId)) {
+            console.log(`[ORDER REALTIME] Duplicate ignored: ${eventId}`);
             return;
           }
-          processedOrders.current.add(newOrder.id);
-          console.log(`[ORDER REALTIME] New order received: ${newOrder.id}`);
+          processedEvents.current.add(eventId);
+          console.log(`[ORDER REALTIME] New order received: ${eventId}`);
           
           if (soundEnabledRef.current) {
-            startNewOrderAlert(newOrder.id);
+            startAlert(eventId);
           }
           
           console.log(`[ORDER REALTIME] Popup triggered`);
-          toast.success(
-            <div className="flex flex-col gap-1">
-              <span className="font-bold text-[13px]">🔔 NEW ORDER RECEIVED</span>
-              <span className="text-[13px]">Order #{newOrder.order_number}</span>
-              <span className="text-[13px]">Amount: {formatINR(newOrder.total || 0)}</span>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="mt-2 h-7 text-[11px]" 
-                onClick={() => {
-                  window.location.hash = ""; // just to be safe
-                  document.getElementById("admin-orders-link")?.click();
-                }}
-              >
-                View Orders
-              </Button>
-            </div>,
-            { duration: 8000 }
-          );
-
-          if ("Notification" in window && Notification.permission === "granted") {
-            console.log(`[ORDER REALTIME] Browser notification triggered`);
-            new Notification("New Order Received", {
-              body: `Order #${newOrder.order_number} — ${formatINR(newOrder.total || 0)}`,
-            });
-          }
+          addPopup({
+            id: eventId,
+            type: "order",
+            data: newOrder
+          });
 
           setRecentNotifications(prev => [
-            { id: newOrder.id, order_number: newOrder.order_number, total: newOrder.total, time: new Date() },
+            { id: eventId, type: "order", order_number: newOrder.order_number, total: newOrder.total, time: new Date() },
             ...prev
           ].slice(0, 10));
           
@@ -196,9 +179,41 @@ function AdminPage() {
         (payload) => {
           const updatedOrder = payload.new as any;
           if (updatedOrder.status !== "placed") {
-            stopNewOrderAlert(updatedOrder.id);
+            stopAlert(`order:${updatedOrder.id}`);
           }
           queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+        }
+      )
+      .subscribe();
+
+    // Customization Requests channel
+    const customizationsChannel = supabase
+      .channel("public:customization_requests")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "customization_requests" },
+        (payload) => {
+          const newReq = payload.new as any;
+          const eventId = `customization:${newReq.id}`;
+          if (processedEvents.current.has(eventId)) {
+            return;
+          }
+          processedEvents.current.add(eventId);
+          
+          if (soundEnabledRef.current) {
+            startAlert(eventId);
+          }
+          
+          addPopup({
+            id: eventId,
+            type: "customization",
+            data: newReq
+          });
+
+          setRecentNotifications(prev => [
+            { id: eventId, type: "customization", title: newReq.title, customer: newReq.customer, time: new Date() },
+            ...prev
+          ].slice(0, 10));
         }
       )
       .subscribe();
@@ -229,8 +244,9 @@ function AdminPage() {
       .subscribe();
 
     return () => {
-      Array.from(activeAlerts.keys()).forEach(id => stopNewOrderAlert(id));
+      Array.from(activeAlerts.keys()).forEach(id => stopAlert(id));
       supabase.removeChannel(ordersChannel);
+      supabase.removeChannel(customizationsChannel);
       supabase.removeChannel(inventoryChannel);
       supabase.removeChannel(productsChannel);
     };
@@ -245,7 +261,21 @@ function AdminPage() {
         .select("*, order_items(*)")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      data?.forEach(o => processedOrders.current.add((o as any).id));
+      data?.forEach(o => processedEvents.current.add(`order:${(o as any).id}`));
+      return (data as any[]) || [];
+    },
+  });
+
+  const customizationsQuery = useQuery({
+    queryKey: ["admin-customizations"],
+    enabled: isAdmin,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("customization_requests")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      data?.forEach(c => processedEvents.current.add(`customization:${(c as any).id}`));
       return (data as any[]) || [];
     },
   });
@@ -288,7 +318,7 @@ function AdminPage() {
 
   const setStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      stopNewOrderAlert(id);
+      stopAlert(`order:${id}`);
       const updateData = { status, updated_at: new Date().toISOString() };
       const { error } = await supabase.from("orders").update(updateData as never).eq("id", id);
       if (error) throw error;
@@ -349,7 +379,114 @@ function AdminPage() {
   const outOfStock = inventory.filter((i) => i.stock === 0).length;
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row bg-secondary/20">
+    <div className="flex h-screen bg-gray-50">
+      {activePopups.length > 0 && (
+        <div className="fixed top-[80px] right-4 md:right-8 z-[9999] flex flex-col gap-4 max-h-[80vh] overflow-y-auto pointer-events-none w-full max-w-[400px]">
+          {activePopups.map((popup) => {
+            if (popup.type === "order") {
+              const newOrder = popup.data;
+              return (
+                <div key={popup.id} className="bg-white p-6 rounded-xl shadow-2xl w-full border-t-4 border-blue-600 animate-in slide-in-from-right-8 fade-in duration-300 pointer-events-auto">
+                  <div className="flex items-center justify-between gap-2 text-blue-600 font-bold mb-4 text-lg">
+                    <div className="flex items-center gap-2">
+                      <ShoppingCart className="h-6 w-6" />
+                      NEW ORDER RECEIVED
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground -mr-2" onClick={() => { stopAlert(popup.id); removePopup(popup.id); }}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex flex-col gap-3 text-sm mb-6 bg-gray-50 p-4 rounded-lg">
+                    <div className="flex justify-between"><span className="text-muted-foreground font-medium">Customer:</span> <span className="font-semibold">{newOrder.shipping_address?.name || "Unknown"}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground font-medium">Email:</span> <span>{newOrder.shipping_address?.email || "Unknown"}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground font-medium">Phone:</span> <span>{newOrder.shipping_address?.phone || "Unknown"}</span></div>
+                    <div className="flex justify-between mt-2 pt-2 border-t border-border"><span className="text-muted-foreground font-medium">Order ID:</span> <span className="font-mono">#{newOrder.order_number}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground font-medium">Amount:</span> <span className="font-bold text-blue-700">{formatINR(newOrder.total || 0)}</span></div>
+                  </div>
+                  <div className="flex justify-between items-center gap-2">
+                    <Button 
+                      variant="outline"
+                      onClick={() => {
+                        stopAlert(popup.id);
+                        removePopup(popup.id);
+                        window.location.hash = "";
+                        document.getElementById("admin-orders-link")?.click();
+                      }}
+                    >
+                      View Order
+                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                        onClick={() => {
+                          stopAlert(popup.id);
+                          removePopup(popup.id);
+                        }}
+                      >
+                        DISMISS
+                      </Button>
+                      <Button 
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                        onClick={() => {
+                          stopAlert(popup.id);
+                          setStatus.mutate({ id: newOrder.id, status: "processing" });
+                          removePopup(popup.id);
+                        }}
+                      >
+                        ACCEPT
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              );
+            } else {
+              const newReq = popup.data;
+              return (
+                <div key={popup.id} className="bg-white p-6 rounded-xl shadow-2xl w-full border-t-4 border-purple-600 animate-in slide-in-from-right-8 fade-in duration-300 pointer-events-auto">
+                  <div className="flex items-center justify-between gap-2 text-purple-700 font-bold mb-4 text-lg">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-6 w-6" />
+                      NEW CUSTOMIZATION
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground -mr-2" onClick={() => { stopAlert(popup.id); removePopup(popup.id); }}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex flex-col gap-3 text-sm mb-6 bg-purple-50 p-4 rounded-lg">
+                    <div className="flex justify-between"><span className="text-muted-foreground font-medium">Customer:</span> <span className="font-semibold">{newReq.customer || "Unknown"}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground font-medium">Email:</span> <span>{newReq.email || "Unknown"}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground font-medium">Phone:</span> <span>{newReq.phone || "Unknown"}</span></div>
+                    <div className="flex justify-between mt-2 pt-2 border-t border-purple-100"><span className="text-muted-foreground font-medium">Type:</span> <span>{newReq.type || "Unknown"}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground font-medium">Title:</span> <span className="truncate max-w-[150px]">{newReq.title || "Unknown"}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground font-medium">Quantity:</span> <span>{newReq.quantity || 1}</span></div>
+                  </div>
+                  <div className="flex justify-between items-center gap-2">
+                    <Button 
+                      variant="outline"
+                      className="border-purple-200 text-purple-700 hover:bg-purple-50"
+                      onClick={() => {
+                        stopAlert(popup.id);
+                        removePopup(popup.id);
+                      }}
+                    >
+                      View Details
+                    </Button>
+                    <Button 
+                      className="bg-red-600 hover:bg-red-700 text-white"
+                      onClick={() => {
+                        stopAlert(popup.id);
+                        removePopup(popup.id);
+                      }}
+                    >
+                      DISMISS
+                    </Button>
+                  </div>
+                </div>
+              );
+            }
+          })}
+        </div>
+      )}
       {/* Sidebar */}
       <aside className="w-full md:w-64 bg-card border-r border-border/50 flex flex-col">
         <div className="p-6 border-b border-border/50">
@@ -437,7 +574,7 @@ function AdminPage() {
             <Button variant={soundEnabled ? "default" : "outline"} size="sm" className="hidden lg:flex text-xs h-8" onClick={toggleSound}>
               {soundEnabled ? "Disable Alerts" : "Enable Alerts"}
             </Button>
-            <Button variant="outline" size="sm" className="hidden lg:flex text-xs h-8" onClick={() => startNewOrderAlert("test-sound")}>
+            <Button variant="outline" size="sm" className="hidden lg:flex text-xs h-8" onClick={() => startAlert("test-sound")}>
               Test Sound
             </Button>
             <DropdownMenu>
@@ -460,10 +597,17 @@ function AdminPage() {
                   <div className="py-4 text-center text-xs text-muted-foreground">No new notifications</div>
                 ) : (
                   recentNotifications.map(n => (
-                    <DropdownMenuItem key={n.id} className="flex flex-col items-start gap-1 p-3 cursor-pointer" onClick={() => navigate("/admin/orders")}>
-                      <span className="font-semibold text-xs">New Order #{n.order_number}</span>
-                      <span className="text-[10px] text-muted-foreground">{formatINR(n.total || 0)} • {n.time.toLocaleTimeString()}</span>
-                    </DropdownMenuItem>
+                    n.type === "order" ? (
+                      <DropdownMenuItem key={n.id} className="flex flex-col items-start gap-1 p-3 cursor-pointer" onClick={() => navigate("/admin/orders")}>
+                        <span className="font-semibold text-xs text-blue-600">New Order #{n.order_number}</span>
+                        <span className="text-[10px] text-muted-foreground">{formatINR(n.total || 0)} • {n.time.toLocaleTimeString()}</span>
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem key={n.id} className="flex flex-col items-start gap-1 p-3 cursor-pointer">
+                        <span className="font-semibold text-xs text-purple-700">✨ Customization</span>
+                        <span className="text-[10px] text-muted-foreground">{n.title} by {n.customer} • {n.time.toLocaleTimeString()}</span>
+                      </DropdownMenuItem>
+                    )
                   ))
                 )}
               </DropdownMenuContent>
