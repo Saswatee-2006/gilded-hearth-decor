@@ -2,21 +2,22 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { X, Package, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatINR } from "@/lib/catalog";
+import { formatINR, resolveImage } from "@/lib/catalog";
 
 type OrderModalProps = {
   orderId: string;
   onClose: () => void;
   onAccept: (id: string) => void;
+  onStatusChange?: (id: string, status: string) => void;
 };
 
-export function OrderModal({ orderId, onClose, onAccept }: OrderModalProps) {
+export function OrderModal({ orderId, onClose, onAccept, onStatusChange }: OrderModalProps) {
   const { data: order, isLoading, error } = useQuery({
     queryKey: ["admin-order", orderId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, order_items(*)")
+        .select("*, order_items(*, product:products(image))")
         .eq("id", orderId)
         .single();
       
@@ -92,6 +93,48 @@ export function OrderModal({ orderId, onClose, onAccept }: OrderModalProps) {
                     <span className="text-xs text-[#8C857B] mb-1">Phone Number</span>
                     <span>{addr?.phone || "Unknown"}</span>
                   </div>
+                  {order.user_id && (
+                    <div className="flex flex-col">
+                      <span className="text-xs text-[#8C857B] mb-1">Customer ID</span>
+                      <span className="text-xs font-mono text-ink/70">{order.user_id}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Shipping Address */}
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-[#8C857B] mb-4">Shipping Address</h3>
+                <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 space-y-3 shadow-sm">
+                  <div className="flex flex-col">
+                    <span className="text-xs text-[#8C857B] mb-1">Deliver To</span>
+                    <span className="font-medium">{addr?.name || "Unknown"}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs text-[#8C857B] mb-1">Address</span>
+                    <span>{addr?.line1 || "No address line 1"}</span>
+                    {addr?.line2 && <span>{addr.line2}</span>}
+                  </div>
+                  <div className="flex justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-[#8C857B] mb-1">City</span>
+                      <span>{addr?.city || "Unknown"}</span>
+                    </div>
+                    <div className="flex flex-col text-right">
+                      <span className="text-xs text-[#8C857B] mb-1">State</span>
+                      <span>{addr?.state || "Unknown"}</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-[#8C857B] mb-1">Pincode</span>
+                      <span>{addr?.pincode || "Unknown"}</span>
+                    </div>
+                    <div className="flex flex-col text-right">
+                      <span className="text-xs text-[#8C857B] mb-1">Phone</span>
+                      <span>{addr?.phone || "Unknown"}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -100,14 +143,26 @@ export function OrderModal({ orderId, onClose, onAccept }: OrderModalProps) {
                 <h3 className="text-sm font-semibold uppercase tracking-wider text-[#8C857B] mb-4">Order Information</h3>
                 <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 space-y-3 shadow-sm">
                   <div className="flex justify-between items-center">
+                    <span className="text-sm text-[#8C857B]">Order ID</span>
+                    <span className="text-sm font-mono text-ink/80">{order.id}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-[#8C857B]">Order Date</span>
+                    <span className="text-sm font-medium">{new Date(order.created_at).toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
                     <span className="text-sm text-[#8C857B]">Order Status</span>
                     <span className="px-2.5 py-1 rounded-full text-xs font-semibold uppercase bg-gray-100 text-gray-700">
                       {order.status}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-[#8C857B]">Payment Status</span>
+                    <span className="text-sm text-[#8C857B]">Payment Method</span>
                     <span className="text-sm font-medium">{order.payment_method === 'cod' ? 'Cash on Delivery' : order.payment_method || 'Prepaid'}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-[#8C857B]">Payment Status</span>
+                    <span className="text-sm font-medium">{order.payment_method === 'cod' ? 'Pending (COD)' : 'Paid'}</span>
                   </div>
                   <div className="flex justify-between items-center border-t border-[#E5E0D8] pt-3 mt-3">
                     <span className="text-sm font-medium text-[#8C857B]">Total Amount</span>
@@ -126,36 +181,25 @@ export function OrderModal({ orderId, onClose, onAccept }: OrderModalProps) {
                   <div key={item.id} className="flex gap-4 p-4 bg-white border border-[#E5E0D8] rounded-xl shadow-sm">
                     {/* Image */}
                     <div className="w-20 h-20 bg-[#F9F8F6] rounded-lg border border-[#E5E0D8] overflow-hidden flex-shrink-0">
-                      {item.image_key ? (
-                        <img 
-                          src={`${supabase.storage.from("products").getPublicUrl(item.image_key).data.publicUrl}`} 
-                          alt={item.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Package className="h-6 w-6 text-[#8C857B]/50" />
-                        </div>
-                      )}
+                      <img 
+                        src={resolveImage(item.image_key || item.product?.image)} 
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iNDAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZWVlIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGFsaWdubWVudC1iYXNlbGluZT0ibWlkZGxlIiBmaWxsPSIjYWFhIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=";
+                        }}
+                      />
                     </div>
                     
                     {/* Item Details */}
                     <div className="flex-1 flex flex-col justify-center">
-                      <h4 className="font-medium text-ink line-clamp-1">{item.name}</h4>
-                      <p className="text-xs text-[#8C857B] mt-1 line-clamp-1">
-                        {item.variant !== 'Default' ? `Variant: ${item.variant}` : 'Standard'}
-                        <span className="mx-2">•</span> 
-                        ID: {item.product_id?.split('-')[0] || 'N/A'}
-                      </p>
-                      
-                      <div className="flex justify-between items-end mt-3">
-                        <div className="text-sm">
-                          <span className="text-[#8C857B]">{item.qty} × </span>
-                          <span className="font-medium">{formatINR(item.price)}</span>
-                        </div>
-                        <div className="font-semibold">
-                          {formatINR(item.price * item.qty)}
-                        </div>
+                      <h4 className="font-medium text-ink line-clamp-1 mb-1">{item.name}</h4>
+                      <div className="text-xs text-[#8C857B] flex flex-col gap-0.5">
+                        <span>SKU: {item.product_id?.split('-')[0] || 'N/A'}</span>
+                        <span>Size: {item.variant !== 'Default' ? item.variant : 'Standard'}</span>
+                        <span>Quantity: {item.qty}</span>
+                        <span>Unit Price: {formatINR(item.price)}</span>
+                        <span className="font-medium text-ink mt-1">Subtotal: {formatINR(item.price * item.qty)}</span>
                       </div>
                     </div>
                   </div>
@@ -178,6 +222,10 @@ export function OrderModal({ orderId, onClose, onAccept }: OrderModalProps) {
                     <span className="font-medium">-{formatINR(order.discount)}</span>
                   </div>
                 )}
+                <div className="flex justify-between text-sm">
+                  <span className="text-[#8C857B]">Tax</span>
+                  <span className="font-medium">{formatINR(0)}</span>
+                </div>
                 <div className="flex justify-between items-center border-t border-[#E5E0D8] pt-3 mt-3">
                   <span className="font-medium text-ink">Final Total</span>
                   <span className="font-bold text-xl">{formatINR(order.total || 0)}</span>
@@ -189,22 +237,36 @@ export function OrderModal({ orderId, onClose, onAccept }: OrderModalProps) {
         </div>
 
         {/* Footer Actions */}
-        <div className="px-6 py-4 border-t border-[#E5E0D8] bg-[#FDFBF7] flex justify-end gap-3 rounded-b-2xl">
-          <Button 
-            variant="secondary" 
-            onClick={onClose}
-            className="bg-[#F2EFE9] text-ink hover:bg-[#EAE5DE] px-6 h-10 shadow-none border-0"
-          >
-            Dismiss
-          </Button>
-          {order.status === 'placed' && (
-            <Button 
-              onClick={() => onAccept(order.id)}
-              className="bg-[#8C857B] hover:bg-[#7A746B] text-white px-8 h-10 shadow-sm"
+        <div className="px-6 py-4 border-t border-[#E5E0D8] bg-[#FDFBF7] flex justify-between items-center rounded-b-2xl">
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-[#8C857B] font-medium hidden sm:inline-block">Update Status:</span>
+            <select 
+              className="bg-white border border-[#E5E0D8] text-ink text-sm rounded-lg focus:ring-[#8C857B] focus:border-[#8C857B] block w-32 p-2 shadow-sm"
+              value={order.status}
+              onChange={(e) => onStatusChange && onStatusChange(order.id, e.target.value)}
             >
-              Accept Order
+              {['placed', 'processing', 'shipped', 'delivered', 'cancelled'].map(s => (
+                <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex gap-3">
+            <Button 
+              variant="secondary" 
+              onClick={onClose}
+              className="bg-[#F2EFE9] text-ink hover:bg-[#EAE5DE] px-6 h-10 shadow-none border-0"
+            >
+              Close
             </Button>
-          )}
+            {order.status === 'placed' && (
+              <Button 
+                onClick={() => onAccept(order.id)}
+                className="bg-[#8C857B] hover:bg-[#7A746B] text-white px-8 h-10 shadow-sm"
+              >
+                Accept Order
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>

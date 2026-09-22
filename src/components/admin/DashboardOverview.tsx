@@ -29,6 +29,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { resolveImage, formatINR } from "@/lib/catalog";
 import { cn } from "@/lib/utils";
+import { useSettings } from "@/lib/settings";
 
 type Product = any;
 type Inventory = any;
@@ -47,10 +48,13 @@ export function DashboardOverview({ products, inventory, orders, onRefresh }: Da
   const navigate = useNavigate();
   const [timeFilter, setTimeFilter] = useState<"today" | "7d" | "30d" | "3m" | "1y">("30d");
 
+  const { settings } = useSettings();
+  const lowStockThreshold = settings.inventory?.low_stock_threshold ?? 5;
+
   // Summary Metrics
   const totalProducts = products.length;
   const totalStock = useMemo(() => inventory.reduce((sum, item) => sum + (item.stock || 0), 0), [inventory]);
-  const lowStockCount = useMemo(() => inventory.filter((i) => i.stock > 0 && i.stock < 5).length, [inventory]);
+  const lowStockCount = useMemo(() => inventory.filter((i) => i.stock > 0 && i.stock < lowStockThreshold).length, [inventory, lowStockThreshold]);
   const outOfStockCount = useMemo(() => inventory.filter((i) => i.stock === 0).length, [inventory]);
 
   const inventoryValue = useMemo(() => {

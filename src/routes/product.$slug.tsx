@@ -69,6 +69,26 @@ function ProductPage() {
     }
   }, [product, markViewed]);
 
+  useEffect(() => {
+    if (user && product) {
+      const pendingActionStr = localStorage.getItem("pendingCartAction");
+      if (pendingActionStr) {
+        try {
+          const pendingAction = JSON.parse(pendingActionStr);
+          if (pendingAction.productId === product.id) {
+            addToCart(product.id, pendingAction.qty, pendingAction.size);
+            localStorage.removeItem("pendingCartAction");
+            if (pendingAction.isBuyNow) {
+              navigate("/checkout");
+            }
+          }
+        } catch (e) {
+          console.error("Error parsing pending action", e);
+        }
+      }
+    }
+  }, [user, product, addToCart, navigate]);
+
   if (isLoadingProducts) {
     return (
       <div className="py-20 text-center">
@@ -247,6 +267,16 @@ function ProductPage() {
               <Button
                 size="lg"
                 onClick={() => {
+                  if (!user) {
+                    localStorage.setItem("pendingCartAction", JSON.stringify({
+                      productId: product.id,
+                      qty,
+                      size: hasSize ? size : undefined,
+                      isBuyNow: false
+                    }));
+                    navigate(`/auth?returnTo=/product/${product.slug}`);
+                    return;
+                  }
                   addToCart(product.id, qty, hasSize ? size : undefined);
                 }}
                 disabled={currentStock === 0 || isLoadingInventory || (hasSize && !size)}
@@ -258,6 +288,16 @@ function ProductPage() {
                 variant="secondary"
                 disabled={currentStock === 0 || isLoadingInventory || (hasSize && !size)}
                 onClick={() => {
+                  if (!user) {
+                    localStorage.setItem("pendingCartAction", JSON.stringify({
+                      productId: product.id,
+                      qty,
+                      size: hasSize ? size : undefined,
+                      isBuyNow: true
+                    }));
+                    navigate(`/auth?returnTo=/product/${product.slug}`);
+                    return;
+                  }
                   addToCart(product.id, qty, hasSize ? size : undefined);
                   navigate("/checkout");
                 }}

@@ -6,6 +6,7 @@ import { Footer } from "@/components/site/Footer";
 import { Header } from "@/components/site/Header";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
+import { SettingsProvider } from "@/lib/settings";
 import { ShopProvider } from "@/lib/shop-store";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { GlobalBackButton } from "@/components/GlobalBackButton";
@@ -139,9 +140,10 @@ export function App() {
     <ThemeProvider defaultTheme="light" storageKey="aarohan-theme">
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <SplashHandler />
-          <ShopProvider>
-            <BrowserRouter>
+          <SettingsProvider>
+            <SplashHandler />
+            <ShopProvider>
+              <BrowserRouter>
               <ScrollToTop />
               <Routes>
                 <Route element={<SiteLayout />}>
@@ -184,8 +186,9 @@ export function App() {
                   } 
                 />
               </Routes>
-            </BrowserRouter>
-          </ShopProvider>
+              </BrowserRouter>
+            </ShopProvider>
+          </SettingsProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>

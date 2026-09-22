@@ -44,6 +44,8 @@ import { DashboardOverview } from "@/components/admin/DashboardOverview";
 import { UserManager } from "@/components/admin/UserManager";
 import { OrderModal } from "@/components/admin/OrderModal";
 import { Input } from "@/components/ui/input";
+import { useSettings } from "@/lib/settings";
+import { SettingsManager } from "@/components/admin/SettingsManager";
 
 const STATUSES = ["placed", "processing", "shipped", "delivered", "cancelled"] as const;
 
@@ -69,7 +71,7 @@ const ensureAudioContextResumed = async () => {
   return ctx;
 };
 
-const playNotificationSound = async () => {
+const playNotificationSound = async (volume: number = 1) => {
   try {
     const ctx = await ensureAudioContextResumed();
     if (!ctx) return;
@@ -84,7 +86,7 @@ const playNotificationSound = async () => {
       osc.frequency.setValueAtTime(freq, ctx.currentTime + startTime);
       
       gain.gain.setValueAtTime(0, ctx.currentTime + startTime);
-      gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + startTime + 0.05);
+      gain.gain.linearRampToValueAtTime(0.5 * volume, ctx.currentTime + startTime + 0.05);
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + startTime + duration);
       
       osc.start(ctx.currentTime + startTime);
@@ -133,7 +135,7 @@ const playAcceptSound = async () => {
 const activeAlerts = new Set<string>();
 let globalAlertInterval: number | null = null;
 
-const stopAlert = (id: string) => {
+export const stopAlert = (id: string) => {
   activeAlerts.delete(id);
   if (activeAlerts.size === 0 && globalAlertInterval) {
     window.clearInterval(globalAlertInterval);
@@ -142,16 +144,23 @@ const stopAlert = (id: string) => {
   }
 };
 
-const startAlert = (id: string) => {
+export const startAlert = (id: string, notifSettings: any) => {
   activeAlerts.add(id);
   if (globalAlertInterval) {
     window.clearInterval(globalAlertInterval);
   }
-  playNotificationSound();
-  globalAlertInterval = window.setInterval(() => {
-    playNotificationSound();
-  }, 2500);
-  console.log(`[ORDER REALTIME] Sound started looping for: ${id}`);
+  
+  if (notifSettings?.alert_sound === false) return;
+  
+  const vol = notifSettings?.volume !== undefined ? notifSettings.volume / 100 : 1;
+  playNotificationSound(vol);
+  
+  if (notifSettings?.continuous_alert_sound) {
+    globalAlertInterval = window.setInterval(() => {
+      playNotificationSound(vol);
+    }, 2500);
+    console.log(`[ORDER REALTIME] Sound started looping for: ${id}`);
+  }
 };
 
 function AdminPage() {
@@ -159,12 +168,15 @@ function AdminPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const { settings } = useSettings();
   
   const processedEvents = useRef<Set<string>>(new Set());
-  const [soundEnabled, setSoundEnabled] = useState(() => {
-    return localStorage.getItem("admin_sound_enabled") === "true";
-  });
-  const soundEnabledRef = useRef(soundEnabled);
+  const settingsRef = useRef(settings);
+
+  useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
+
   const [recentNotifications, setRecentNotifications] = useState<any[]>([]);
   const [activePopups, setActivePopups] = useState<any[]>([]);
   const [viewOrderId, setViewOrderId] = useState<string | null>(null);
@@ -172,19 +184,6 @@ function AdminPage() {
 
   const addPopup = (popup: any) => setActivePopups(prev => [...prev, popup]);
   const removePopup = (id: string) => setActivePopups(prev => prev.filter(p => p.id !== id));
-
-  const toggleSound = () => {
-    const next = !soundEnabled;
-    setSoundEnabled(next);
-    soundEnabledRef.current = next;
-    localStorage.setItem("admin_sound_enabled", next.toString());
-    if (next) {
-      startAlert("test-sound-id");
-      toast.success("Alert sound enabled (6-second test)");
-    } else {
-      toast("Alert sound disabled");
-    }
-  };
 
   // Real-time notifications and cache invalidation
   useEffect(() => {
@@ -208,16 +207,18 @@ function AdminPage() {
           processedEvents.current.add(eventId);
           console.log(`[ORDER REALTIME] New order received: ${eventId}`);
           
-          if (soundEnabledRef.current) {
-            startAlert(eventId);
+          if (settingsRef.current.notifications?.new_order_alerts !== false) {
+            startAlert(eventId, settingsRef.current.notifications);
+            
+            if (settingsRef.current.notifications?.popup_notifications !== false) {
+              console.log(`[ORDER REALTIME] Popup triggered`);
+              addPopup({
+                id: eventId,
+                type: "order",
+                data: newOrder
+              });
+            }
           }
-          
-          console.log(`[ORDER REALTIME] Popup triggered`);
-          addPopup({
-            id: eventId,
-            type: "order",
-            data: newOrder
-          });
 
           setRecentNotifications(prev => [
             { id: eventId, type: "order", order_number: newOrder.order_number, total: newOrder.total, time: new Date() },
@@ -331,12 +332,93 @@ function AdminPage() {
     queryKey: ["admin-users"],
     enabled: isAdmin,
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch all profiles
+      const { data: profiles, error: pError } = await supabase
         .from("profiles")
-        .select("id, full_name, email, role, created_at, phone")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data as any[]) || [];
+        .select("id, full_name, email, role, created_at, phone");
+      if (pError) throw pError;
+
+      // Fetch all orders
+      const { data: orders, error: oError } = await supabase
+        .from("orders")
+        .select("*");
+      if (oError) throw oError;
+
+      const profileMap = new Map();
+      profiles.forEach(p => {
+        if (p.role !== 'admin') {
+          profileMap.set(p.id, { ...p, status: 'Registered' });
+        }
+      });
+      // also map by email to link guests if possible
+      const profileByEmail = new Map();
+      profiles.forEach(p => {
+        if (p.role !== 'admin' && p.email) {
+          profileByEmail.set(p.email.toLowerCase(), p.id);
+        }
+      });
+
+      const customerMap = new Map();
+
+      orders.forEach(o => {
+        let customerId = o.user_id;
+        let email = o.shipping_address?.email?.toLowerCase() || '';
+        let name = o.shipping_address?.name || 'Unknown Guest';
+        let phone = o.shipping_address?.phone || '';
+
+        // If no user_id, check if email matches a profile
+        if (!customerId && email && profileByEmail.has(email)) {
+          customerId = profileByEmail.get(email);
+        }
+
+        let key = customerId || (email ? `guest_${email}` : `guest_order_${o.id}`);
+
+        if (!customerMap.has(key)) {
+          if (customerId && profileMap.has(customerId)) {
+            const p = profileMap.get(customerId);
+            customerMap.set(key, {
+              ...p,
+              orders_count: 0,
+              total_spent: 0,
+              last_order_date: null,
+              orders: [],
+            });
+          } else {
+            // Create a guest profile object
+            customerMap.set(key, {
+              id: key,
+              full_name: name,
+              email: email,
+              phone: phone,
+              role: 'guest',
+              status: 'Guest',
+              created_at: o.created_at,
+              orders_count: 0,
+              total_spent: 0,
+              last_order_date: null,
+              orders: [],
+              shipping_address: o.shipping_address
+            });
+          }
+        }
+
+        const customer = customerMap.get(key);
+        customer.orders.push(o);
+        customer.orders_count += 1;
+        customer.total_spent += (o.total || 0);
+        
+        const orderDate = new Date(o.created_at);
+        if (!customer.last_order_date || orderDate > new Date(customer.last_order_date)) {
+          customer.last_order_date = o.created_at;
+        }
+      });
+
+      const customers = Array.from(customerMap.values());
+      customers.forEach(c => {
+        c.orders.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      });
+
+      return customers.sort((a, b) => new Date(b.last_order_date).getTime() - new Date(a.last_order_date).getTime());
     },
   });
 
@@ -399,7 +481,8 @@ function AdminPage() {
   const users: any[] = (usersQuery.data as any[]) || [];
 
   const pendingOrders = orders.filter((o) => o.status === "placed").length;
-  const lowStock = inventory.filter((i) => i.stock > 0 && i.stock < 5).length;
+  const lowStockThreshold = settings.inventory?.low_stock_threshold ?? 5;
+  const lowStock = inventory.filter((i) => i.stock > 0 && i.stock < lowStockThreshold).length;
   const outOfStock = inventory.filter((i) => i.stock === 0).length;
 
   return (
@@ -428,41 +511,48 @@ function AdminPage() {
                     <div className="flex justify-between mt-2 pt-2 border-t border-[#E5E0D8]"><span className="text-[#8C857B]">Order ID</span> <span className="font-mono text-ink/70">#{newOrder.order_number}</span></div>
                     <div className="flex justify-between mt-1"><span className="text-[#8C857B]">Amount</span> <span className="font-semibold text-ink">{formatINR(newOrder.total || 0)}</span></div>
                   </div>
-                  <div className="flex justify-between items-center gap-2">
-                    <Button 
-                      variant="outline"
-                      className="border-[#E5E0D8] text-ink hover:bg-[#F2EFE9] h-9 px-3 rounded-lg flex-1 text-xs sm:text-sm shadow-none"
-                      onClick={() => {
-                        stopAlert(popup.id);
-                        removePopup(popup.id);
-                        setViewOrderId(newOrder.id);
-                      }}
-                    >
-                      View Order
-                    </Button>
-                    <div className="flex gap-2 flex-1 justify-end">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex justify-between items-center gap-2">
                       <Button 
-                        variant="secondary"
-                        className="bg-[#F2EFE9] text-ink hover:bg-[#EAE5DE] h-9 px-3 rounded-lg text-xs sm:text-sm shadow-none"
+                        variant="outline"
+                        className="border-[#E5E0D8] text-ink hover:bg-[#F2EFE9] h-9 px-3 rounded-lg flex-1 text-xs sm:text-sm shadow-none"
                         onClick={() => {
                           stopAlert(popup.id);
                           removePopup(popup.id);
+                          setViewOrderId(newOrder.id);
+                        }}
+                      >
+                        View Order
+                      </Button>
+                    </div>
+                    <div className="flex justify-between items-center gap-2 mt-2 pt-3 border-t border-[#E5E0D8]">
+                      <Button 
+                        variant="outline"
+                        className="bg-white border-[#E5E0D8] text-ink hover:bg-[#F9F7F1]"
+                        onClick={() => {
+                          removePopup(popup.id);
+                          const stopWhen = settings.notifications?.stop_sound_when;
+                          if (stopWhen === "dismiss" || stopWhen === "either") {
+                            stopAlert(popup.id);
+                          }
                         }}
                       >
                         Dismiss
                       </Button>
                       <Button 
-                        className="bg-[#8C857B] hover:bg-[#7A746B] text-white h-9 px-4 rounded-lg shadow-sm text-xs sm:text-sm"
+                        className="bg-accent hover:bg-accent/90 text-white"
                         onClick={() => {
-                          console.log("Accept clicked");
-                          console.log("Stopping incoming order sound");
-                          stopAlert(popup.id);
+                          removePopup(popup.id);
+                          const stopWhen = settings.notifications?.stop_sound_when;
+                          if (stopWhen === "accept" || stopWhen === "either") {
+                            stopAlert(popup.id);
+                          }
                           playAcceptSound();
                           setStatus.mutate({ id: newOrder.id, status: "processing" });
-                          removePopup(popup.id);
                         }}
+                        disabled={setStatus.isPending}
                       >
-                        Accept
+                        {setStatus.isPending ? "Accepting..." : "Accept Order"}
                       </Button>
                     </div>
                   </div>
@@ -667,10 +757,15 @@ function AdminPage() {
           </div>
           
           <div className="flex items-center gap-3 sm:gap-5 shrink-0">
-            <Button variant={soundEnabled ? "default" : "outline"} size="sm" className={cn("hidden lg:flex text-[13px] h-9 rounded-full", soundEnabled ? "bg-clay text-white" : "border-[#E8E3D9] bg-white")} onClick={toggleSound}>
-              {soundEnabled ? "Alerts On" : "Alerts Off"}
+            <Button variant={settings.notifications?.alert_sound ? "default" : "outline"} size="sm" className={cn("hidden lg:flex text-[13px] h-9 rounded-full", settings.notifications?.alert_sound ? "bg-clay text-white" : "border-[#E8E3D9] bg-white")}>
+              {settings.notifications?.alert_sound ? "Alerts On" : "Alerts Off"}
             </Button>
-            <Button variant="outline" size="sm" className="hidden lg:flex text-[13px] h-9 rounded-full border-[#E8E3D9] bg-white" onClick={() => startAlert("test-sound")}>
+            <Button variant="outline" size="sm" className="hidden lg:flex text-[13px] h-9 rounded-full border-[#E8E3D9] bg-white" onClick={() => {
+              startAlert("test-sound-id", settings.notifications);
+              if (!settings.notifications?.continuous_alert_sound) {
+                setTimeout(() => stopAlert("test-sound-id"), 3000);
+              }
+            }}>
               Test Sound
             </Button>
             
@@ -792,7 +887,11 @@ function AdminPage() {
                       </thead>
                       <tbody className="divide-y divide-border/50">
                         {orders.map((o) => (
-                          <tr key={o.id} className="hover:bg-accent/5 transition-colors">
+                          <tr 
+                            key={o.id} 
+                            className="hover:bg-accent/5 transition-colors cursor-pointer" 
+                            onClick={() => setViewOrderId(o.id)}
+                          >
                             <td className="px-6 py-4 font-medium">#{o.order_number}</td>
                             <td className="px-6 py-4">
                               <p>{o.shipping_address?.name}</p>
@@ -815,7 +914,7 @@ function AdminPage() {
                                 {o.status}
                               </span>
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                               <Select
                                 value={o.status}
                                 onValueChange={(status) => setStatus.mutate({ id: o.id, status })}
@@ -847,14 +946,10 @@ function AdminPage() {
                 isLoading={usersQuery.isLoading}
                 isError={usersQuery.isError}
                 onRefresh={() => queryClient.invalidateQueries({ queryKey: ["admin-users"] })}
+                onViewOrder={(id) => setViewOrderId(id)}
               />
             } />
-            <Route path="settings" element={
-              <div className="p-8 text-center bg-card rounded-xl border border-border/50">
-                <h3 className="text-lg font-medium">Settings</h3>
-                <p className="text-muted-foreground mt-2">Store configuration settings will appear here.</p>
-              </div>
-            } />
+            <Route path="settings" element={<SettingsManager />} />
           </Routes>
         </div>
       </main>
@@ -878,6 +973,7 @@ function AdminPage() {
             setViewOrderId(null);
             removePopup('order:' + id);
           }}
+          onStatusChange={(id, status) => setStatus.mutate({ id, status })}
         />
       )}
     </div>

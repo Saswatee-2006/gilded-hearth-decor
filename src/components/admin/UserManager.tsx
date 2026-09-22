@@ -2,14 +2,9 @@ import { useState, useMemo } from "react";
 import { ArrowUpDown, Search, X, Users, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { formatINR } from "@/lib/catalog";
+import { CustomerModal } from "@/components/admin/CustomerModal";
 
 type User = any;
 
@@ -18,17 +13,13 @@ interface UserManagerProps {
   isLoading: boolean;
   isError: boolean;
   onRefresh: () => void;
+  onViewOrder: (id: string) => void;
 }
 
-export function UserManager({ users, isLoading, isError, onRefresh }: UserManagerProps) {
+export function UserManager({ users, isLoading, isError, onRefresh, onViewOrder }: UserManagerProps) {
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all");
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
-
-  const roles = useMemo(() => {
-    const rs = new Set(users.map((u) => u.role).filter(Boolean));
-    return Array.from(rs).sort();
-  }, [users]);
+  const [selectedCustomer, setSelectedCustomer] = useState<User | null>(null);
 
   const filteredAndSorted = useMemo(() => {
     let result = [...users];
@@ -37,13 +28,8 @@ export function UserManager({ users, isLoading, isError, onRefresh }: UserManage
       const s = search.toLowerCase();
       result = result.filter((u) => 
         u.full_name?.toLowerCase().includes(s) || 
-        u.email?.toLowerCase().includes(s) || 
-        u.role?.toLowerCase().includes(s)
+        u.email?.toLowerCase().includes(s)
       );
-    }
-
-    if (roleFilter !== "all") {
-      result = result.filter((u) => u.role === roleFilter);
     }
 
     if (sortConfig) {
@@ -58,13 +44,17 @@ export function UserManager({ users, isLoading, isError, onRefresh }: UserManage
             valA = a.email || "";
             valB = b.email || "";
             break;
-          case "phone":
-            valA = a.phone || "";
-            valB = b.phone || "";
+          case "orders":
+            valA = a.orders_count || 0;
+            valB = b.orders_count || 0;
             break;
-          case "role":
-            valA = a.role || "";
-            valB = b.role || "";
+          case "spent":
+            valA = a.total_spent || 0;
+            valB = b.total_spent || 0;
+            break;
+          case "last_order":
+            valA = new Date(a.last_order_date || 0).getTime();
+            valB = new Date(b.last_order_date || 0).getTime();
             break;
           case "joined":
             valA = new Date(a.created_at).getTime();
@@ -81,7 +71,7 @@ export function UserManager({ users, isLoading, isError, onRefresh }: UserManage
     }
 
     return result;
-  }, [users, search, roleFilter, sortConfig]);
+  }, [users, search, sortConfig]);
 
   const handleSort = (key: string) => {
     setSortConfig((curr) => {
@@ -94,7 +84,7 @@ export function UserManager({ users, isLoading, isError, onRefresh }: UserManage
   const SortableHeader = ({ label, sortKey, align = "left" }: { label: string; sortKey: string; align?: "left" | "right" | "center" }) => (
     <th
       className={cn(
-        "px-8 py-4 font-semibold tracking-wider text-[11px] uppercase cursor-pointer hover:bg-[#F9F7F1] transition-colors group",
+        "px-6 py-4 font-semibold tracking-wider text-[11px] uppercase cursor-pointer hover:bg-[#F9F7F1] transition-colors group whitespace-nowrap",
         align === "right" && "text-right",
         align === "center" && "text-center"
       )}
@@ -134,15 +124,15 @@ export function UserManager({ users, isLoading, isError, onRefresh }: UserManage
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 reveal reveal-in">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <h2 className="font-display text-4xl font-light text-ink tracking-tight">Users</h2>
+            <h2 className="font-display text-4xl font-light text-ink tracking-tight">Customers</h2>
             {!isLoading && (
               <span className="px-2.5 py-1 rounded-full bg-[#E8E3D9]/50 text-[#6B655C] text-[12px] font-medium border border-[#E8E3D9]">
-                {users.length} Users
+                {users.length} Customers
               </span>
             )}
           </div>
           <p className="text-[#8C857B] text-[15px]">
-            Manage registered customer accounts.
+            Manage registered customer accounts who have placed orders.
           </p>
         </div>
       </div>
@@ -153,7 +143,7 @@ export function UserManager({ users, isLoading, isError, onRefresh }: UserManage
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-[#8C857B]" />
               <Input
-                placeholder="Search users by name, email, or role..."
+                placeholder="Search customers by name or email..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-11 pr-10 h-11 bg-white border-[#E8E3D9] rounded-xl shadow-sm text-[15px] focus-visible:ring-clay"
@@ -167,30 +157,15 @@ export function UserManager({ users, isLoading, isError, onRefresh }: UserManage
                 </button>
               )}
             </div>
-            <div className="flex gap-4 w-full md:w-auto">
-              <Select value={roleFilter} onValueChange={setRoleFilter}>
-                <SelectTrigger className="w-full md:w-[220px] h-11 bg-white border-[#E8E3D9] rounded-xl shadow-sm text-[14px]">
-                  <SelectValue placeholder="Role" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-[#E8E3D9]">
-                  <SelectItem value="all">All Roles</SelectItem>
-                  {roles.map((r) => (
-                    <SelectItem key={r as string} value={r as string}>
-                      {(r as string).toUpperCase()}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {(search || roleFilter !== "all") && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => { setSearch(""); setRoleFilter("all"); }}
-                  className="h-11 px-4 border-[#E8E3D9] text-[#6B655C] hover:bg-[#F4F1EA] hover:text-ink shrink-0 rounded-xl"
-                >
-                  Clear Filters
-                </Button>
-              )}
-            </div>
+            {(search) && (
+              <Button 
+                variant="outline" 
+                onClick={() => setSearch("")}
+                className="h-11 px-4 border-[#E8E3D9] text-[#6B655C] hover:bg-[#F4F1EA] hover:text-ink shrink-0 rounded-xl"
+              >
+                Clear Filters
+              </Button>
+            )}
           </div>
         </div>
 
@@ -199,21 +174,21 @@ export function UserManager({ users, isLoading, isError, onRefresh }: UserManage
             <table className="w-full text-left">
               <thead className="bg-[#FDFBF7] border-b border-[#E8E3D9]">
                 <tr>
-                  <th className="px-8 py-4"><div className="h-4 w-24 bg-[#E8E3D9] rounded animate-pulse"></div></th>
-                  <th className="px-8 py-4"><div className="h-4 w-32 bg-[#E8E3D9] rounded animate-pulse"></div></th>
-                  <th className="px-8 py-4"><div className="h-4 w-16 bg-[#E8E3D9] rounded animate-pulse"></div></th>
-                  <th className="px-8 py-4"><div className="h-4 w-20 bg-[#E8E3D9] rounded animate-pulse"></div></th>
+                  <th className="px-6 py-4"><div className="h-4 w-24 bg-[#E8E3D9] rounded animate-pulse"></div></th>
+                  <th className="px-6 py-4"><div className="h-4 w-32 bg-[#E8E3D9] rounded animate-pulse"></div></th>
+                  <th className="px-6 py-4"><div className="h-4 w-16 bg-[#E8E3D9] rounded animate-pulse"></div></th>
+                  <th className="px-6 py-4"><div className="h-4 w-20 bg-[#E8E3D9] rounded animate-pulse"></div></th>
+                  <th className="px-6 py-4"><div className="h-4 w-20 bg-[#E8E3D9] rounded animate-pulse"></div></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E8E3D9]">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <tr key={i}>
-                    <td className="px-8 py-5">
-                      <div className="h-5 w-32 bg-[#E8E3D9] rounded animate-pulse"></div>
-                    </td>
-                    <td className="px-8 py-5"><div className="h-4 w-48 bg-[#E8E3D9] rounded animate-pulse"></div></td>
-                    <td className="px-8 py-5"><div className="h-6 w-16 bg-[#F4F1EA] rounded-full animate-pulse"></div></td>
-                    <td className="px-8 py-5"><div className="h-4 w-24 bg-[#E8E3D9] rounded animate-pulse"></div></td>
+                    <td className="px-6 py-5"><div className="h-5 w-32 bg-[#E8E3D9] rounded animate-pulse"></div></td>
+                    <td className="px-6 py-5"><div className="h-4 w-48 bg-[#E8E3D9] rounded animate-pulse"></div></td>
+                    <td className="px-6 py-5"><div className="h-4 w-16 bg-[#E8E3D9] rounded animate-pulse"></div></td>
+                    <td className="px-6 py-5"><div className="h-4 w-24 bg-[#E8E3D9] rounded animate-pulse"></div></td>
+                    <td className="px-6 py-5"><div className="h-4 w-24 bg-[#E8E3D9] rounded animate-pulse"></div></td>
                   </tr>
                 ))}
               </tbody>
@@ -225,70 +200,88 @@ export function UserManager({ users, isLoading, isError, onRefresh }: UserManage
               <Users className="h-8 w-8 text-[#8C857B]" />
             </div>
             <h3 className="text-xl font-display text-ink mb-2">
-              {search || roleFilter !== "all" ? "No users found" : users.filter(u => u.role !== 'admin').length === 0 ? "No customers registered yet." : "No accounts found matching search"}
+              {search ? "No customers found matching search" : "No customers have placed an order yet."}
             </h3>
             <p className="text-[#8C857B] text-[15px] max-w-sm mb-6">
-              {search || roleFilter !== "all" ? "Try adjusting your search query or role filter." : "New registrations will appear here."}
+              {search ? "Try adjusting your search query." : "When customers place orders, they will appear here."}
             </p>
-            {(search || roleFilter !== "all") && (
+            {search && (
               <Button 
-                onClick={() => { setSearch(""); setRoleFilter("all"); }}
+                onClick={() => setSearch("")}
                 className="bg-white border border-[#E8E3D9] text-ink hover:bg-[#F4F1EA] px-6 h-10 rounded-full"
               >
-                Clear Filters
+                Clear Search
               </Button>
             )}
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full text-left whitespace-nowrap">
               <thead className="bg-[#FDFBF7] text-[#8C857B]">
                 <tr>
                   <SortableHeader label="Name" sortKey="name" />
-                  <SortableHeader label="Email" sortKey="email" />
-                  <SortableHeader label="Phone" sortKey="phone" />
-                  <SortableHeader label="Role" sortKey="role" />
+                  <SortableHeader label="Email/Phone" sortKey="email" />
+                  <SortableHeader label="Orders" sortKey="orders" align="center" />
+                  <SortableHeader label="Total Spent" sortKey="spent" />
+                  <SortableHeader label="Last Order" sortKey="last_order" />
                   <SortableHeader label="Joined" sortKey="joined" />
+                  <th className="px-6 py-4 font-semibold tracking-wider text-[11px] uppercase text-left whitespace-nowrap">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E8E3D9]">
                 {filteredAndSorted.map((u, index) => (
                   <tr 
                     key={u.id} 
-                    className="group hover:bg-[#F9F7F1] transition-all duration-300 animate-in fade-in slide-in-from-bottom-4"
+                    className="group hover:bg-[#F9F7F1] transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 cursor-pointer"
                     style={{ animationDelay: `${index * 50}ms`, animationFillMode: "both" }}
+                    onClick={() => setSelectedCustomer(u)}
                   >
-                    <td className="px-8 py-5">
+                    <td className="px-6 py-5">
                       <span className="font-semibold text-[15px] text-ink">
                         {u.full_name || "—"}
                       </span>
                     </td>
-                    <td className="px-8 py-5">
-                      <span className="text-[#6B655C] text-[14px]">
-                        {u.email}
+                    <td className="px-6 py-5">
+                      <div className="flex flex-col">
+                        <span className="text-[#6B655C] text-[14px]">
+                          {u.email}
+                        </span>
+                        <span className="text-[#8C857B] text-[12px]">
+                          {u.phone || "No phone"}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 text-center">
+                      <span className="font-semibold text-ink bg-[#F4F1EA] px-3 py-1 rounded-full">
+                        {u.orders_count}
                       </span>
                     </td>
-                    <td className="px-8 py-5">
-                      <span className="text-[#6B655C] text-[14px]">
-                        {u.phone || "—"}
+                    <td className="px-6 py-5">
+                      <span className="font-bold text-ink">
+                        {formatINR(u.total_spent)}
                       </span>
                     </td>
-                    <td className="px-8 py-5">
-                      <span className={cn(
-                        "px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase inline-block border",
-                        u.role === 'admin' 
-                          ? "bg-[#2C2822] text-[#FDFBF7] border-[#2C2822]" 
-                          : "bg-white text-[#6B655C] border-[#E8E3D9]"
-                      )}>
-                        {u.role || "CUSTOMER"}
-                      </span>
+                    <td className="px-6 py-5 text-[14px] text-[#8C857B]">
+                      {new Date(u.last_order_date).toLocaleDateString(undefined, {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
                     </td>
-                    <td className="px-8 py-5 text-[14px] text-[#8C857B]">
+                    <td className="px-6 py-5 text-[14px] text-[#8C857B]">
                       {new Date(u.created_at).toLocaleDateString(undefined, {
                         year: 'numeric',
                         month: 'short',
                         day: 'numeric'
                       })}
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className={cn(
+                        "px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase",
+                        u.status === 'Guest' ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"
+                      )}>
+                        {u.status || 'Active'}
+                      </span>
                     </td>
                   </tr>
                 ))}
@@ -297,6 +290,15 @@ export function UserManager({ users, isLoading, isError, onRefresh }: UserManage
           </div>
         )}
       </div>
+
+      <CustomerModal 
+        customer={selectedCustomer} 
+        onClose={() => setSelectedCustomer(null)} 
+        onViewOrder={(id) => {
+          setSelectedCustomer(null);
+          onViewOrder(id);
+        }}
+      />
     </div>
   );
 }
