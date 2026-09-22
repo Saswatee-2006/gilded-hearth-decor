@@ -46,11 +46,33 @@ import { Input } from "@/components/ui/input";
 
 const STATUSES = ["placed", "processing", "shipped", "delivered", "cancelled"] as const;
 
-const playNotificationSound = () => {
+// Use a globally shared AudioContext to comply with autoplay restrictions
+let globalAudioContext: AudioContext | null = null;
+const getAudioContext = () => {
+  if (!globalAudioContext) {
+    const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+    if (Ctx) globalAudioContext = new Ctx();
+  }
+  return globalAudioContext;
+};
+
+const ensureAudioContextResumed = async () => {
+  const ctx = getAudioContext();
+  if (ctx && ctx.state === 'suspended') {
+    try {
+      await ctx.resume();
+    } catch (e) {
+      console.error("Failed to resume AudioContext", e);
+    }
+  }
+  return ctx;
+};
+
+const playNotificationSound = async () => {
   try {
-    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContext) return;
-    const ctx = new AudioContext();
+    const ctx = await ensureAudioContextResumed();
+    if (!ctx) return;
+    
     const playBeep = (freq: number, startTime: number, duration: number) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -61,18 +83,49 @@ const playNotificationSound = () => {
       osc.frequency.setValueAtTime(freq, ctx.currentTime + startTime);
       
       gain.gain.setValueAtTime(0, ctx.currentTime + startTime);
-      gain.gain.linearRampToValueAtTime(0.8, ctx.currentTime + startTime + 0.05);
+      gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + startTime + 0.05);
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + startTime + duration);
       
       osc.start(ctx.currentTime + startTime);
       osc.stop(ctx.currentTime + startTime + duration);
     };
 
-    playBeep(880, 0, 0.4);
-    playBeep(659.25, 0.15, 0.4);
-    playBeep(1046.50, 0.3, 0.6);
+    // Elegant notification sound
+    playBeep(440, 0, 0.6); // A4
+    playBeep(554.37, 0.2, 0.8); // C#5
   } catch (e) {
     console.error("[ORDER REALTIME] Audio playback failed", e);
+  }
+};
+
+const playAcceptSound = async () => {
+  try {
+    console.log("Playing acceptance sound");
+    const ctx = await ensureAudioContextResumed();
+    if (!ctx) return;
+    
+    const playBeep = (freq: number, startTime: number, duration: number) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + startTime);
+      
+      gain.gain.setValueAtTime(0, ctx.currentTime + startTime);
+      gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + startTime + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + startTime + duration);
+      
+      osc.start(ctx.currentTime + startTime);
+      osc.stop(ctx.currentTime + startTime + duration);
+    };
+
+    // Subtle confirmation chime
+    playBeep(523.25, 0, 0.2); // C5
+    playBeep(659.25, 0.1, 0.4); // E5
+  } catch (e) {
+    console.error("Acceptance sound playback failed: ", e);
   }
 };
 
@@ -353,31 +406,32 @@ function AdminPage() {
     <div className="flex h-screen bg-[#FDFBF7] text-ink overflow-hidden font-sans">
       {/* Notifications Popups (Preserved) */}
       {activePopups.length > 0 && (
-        <div className="fixed top-[80px] right-4 md:right-8 z-[9999] flex flex-col gap-4 max-h-[80vh] overflow-y-auto pointer-events-none w-full max-w-[400px]">
+        <div className="fixed bottom-4 right-4 left-4 md:left-auto md:bottom-8 md:right-8 z-[9999] flex flex-col gap-4 max-h-[80vh] overflow-y-auto pointer-events-none w-[calc(100%-2rem)] md:w-[380px]">
           {activePopups.map((popup) => {
             if (popup.type === "order") {
               const newOrder = popup.data;
               return (
-                <div key={popup.id} className="bg-white p-6 rounded-xl shadow-2xl w-full border-t-4 border-blue-600 animate-in slide-in-from-right-8 fade-in duration-300 pointer-events-auto">
-                  <div className="flex items-center justify-between gap-2 text-blue-600 font-bold mb-4 text-lg">
+                <div key={popup.id} className="bg-[#FDFBF7] p-5 rounded-2xl shadow-xl w-full border border-[#E5E0D8] animate-in slide-in-from-bottom-12 fade-in duration-500 ease-out pointer-events-auto transition-all">
+                  <div className="flex items-center justify-between gap-2 text-ink mb-4 font-display text-lg border-b border-[#E5E0D8] pb-3">
                     <div className="flex items-center gap-2">
-                      <ShoppingCart className="h-6 w-6" />
-                      NEW ORDER RECEIVED
+                      <ShoppingCart className="h-5 w-5 text-[#8C857B]" />
+                      <span className="tracking-wide text-base mt-0.5">NEW ORDER</span>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground -mr-2" onClick={() => { stopAlert(popup.id); removePopup(popup.id); }}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-[#8C857B] hover:text-ink hover:bg-[#F2EFE9] -mr-2" onClick={() => { stopAlert(popup.id); removePopup(popup.id); }}>
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
-                  <div className="flex flex-col gap-3 text-sm mb-6 bg-gray-50 p-4 rounded-lg">
-                    <div className="flex justify-between"><span className="text-muted-foreground font-medium">Customer:</span> <span className="font-semibold">{newOrder.shipping_address?.name || "Unknown"}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground font-medium">Email:</span> <span>{newOrder.shipping_address?.email || "Unknown"}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground font-medium">Phone:</span> <span>{newOrder.shipping_address?.phone || "Unknown"}</span></div>
-                    <div className="flex justify-between mt-2 pt-2 border-t border-border"><span className="text-muted-foreground font-medium">Order ID:</span> <span className="font-mono">#{newOrder.order_number}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground font-medium">Amount:</span> <span className="font-bold text-blue-700">{formatINR(newOrder.total || 0)}</span></div>
+                  <div className="flex flex-col gap-2 text-sm mb-6 text-ink/80">
+                    <div className="flex justify-between"><span className="text-[#8C857B]">Customer</span> <span className="font-medium text-ink">{newOrder.shipping_address?.name || "Unknown"}</span></div>
+                    <div className="flex justify-between"><span className="text-[#8C857B]">Email</span> <span>{newOrder.shipping_address?.email || "Unknown"}</span></div>
+                    <div className="flex justify-between"><span className="text-[#8C857B]">Phone</span> <span>{newOrder.shipping_address?.phone || "Unknown"}</span></div>
+                    <div className="flex justify-between mt-2 pt-2 border-t border-[#E5E0D8]"><span className="text-[#8C857B]">Order ID</span> <span className="font-mono text-ink/70">#{newOrder.order_number}</span></div>
+                    <div className="flex justify-between mt-1"><span className="text-[#8C857B]">Amount</span> <span className="font-semibold text-ink">{formatINR(newOrder.total || 0)}</span></div>
                   </div>
                   <div className="flex justify-between items-center gap-2">
                     <Button 
                       variant="outline"
+                      className="border-[#E5E0D8] text-ink hover:bg-[#F2EFE9] h-9 px-3 rounded-lg flex-1 text-xs sm:text-sm shadow-none"
                       onClick={() => {
                         stopAlert(popup.id);
                         removePopup(popup.id);
@@ -387,25 +441,29 @@ function AdminPage() {
                     >
                       View Order
                     </Button>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-1 justify-end">
                       <Button 
-                        className="bg-red-600 hover:bg-red-700 text-white"
+                        variant="secondary"
+                        className="bg-[#F2EFE9] text-ink hover:bg-[#EAE5DE] h-9 px-3 rounded-lg text-xs sm:text-sm shadow-none"
                         onClick={() => {
                           stopAlert(popup.id);
                           removePopup(popup.id);
                         }}
                       >
-                        DISMISS
+                        Dismiss
                       </Button>
                       <Button 
-                        className="bg-green-600 hover:bg-green-700 text-white"
+                        className="bg-[#8C857B] hover:bg-[#7A746B] text-white h-9 px-4 rounded-lg shadow-sm text-xs sm:text-sm"
                         onClick={() => {
+                          console.log("Accept clicked");
+                          console.log("Stopping incoming order sound");
                           stopAlert(popup.id);
+                          playAcceptSound();
                           setStatus.mutate({ id: newOrder.id, status: "processing" });
                           removePopup(popup.id);
                         }}
                       >
-                        ACCEPT
+                        Accept
                       </Button>
                     </div>
                   </div>
