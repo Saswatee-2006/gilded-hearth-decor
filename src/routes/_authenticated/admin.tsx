@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Routes, Route, Link, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import {
   Package,
   ShoppingCart,
@@ -16,6 +17,7 @@ import {
   Search,
   Sparkles,
   X,
+  Menu,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -39,6 +41,7 @@ import { ProductFormDialog } from "@/components/admin/ProductFormDialog";
 import { InventoryManager } from "@/components/admin/InventoryManager";
 import { ProductManager } from "@/components/admin/ProductManager";
 import { DashboardOverview } from "@/components/admin/DashboardOverview";
+import { UserManager } from "@/components/admin/UserManager";
 import { Input } from "@/components/ui/input";
 
 const STATUSES = ["placed", "processing", "shipped", "delivered", "cancelled"] as const;
@@ -112,6 +115,7 @@ function AdminPage() {
   const soundEnabledRef = useRef(soundEnabled);
   const [recentNotifications, setRecentNotifications] = useState<any[]>([]);
   const [activePopups, setActivePopups] = useState<any[]>([]);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const addPopup = (popup: any) => setActivePopups(prev => [...prev, popup]);
   const removePopup = (id: string) => setActivePopups(prev => prev.filter(p => p.id !== id));
@@ -186,37 +190,6 @@ function AdminPage() {
       )
       .subscribe();
 
-    // Customization Requests channel
-    const customizationsChannel = supabase
-      .channel("public:customization_requests")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "customization_requests" },
-        (payload) => {
-          const newReq = payload.new as any;
-          const eventId = `customization:${newReq.id}`;
-          if (processedEvents.current.has(eventId)) {
-            return;
-          }
-          processedEvents.current.add(eventId);
-          
-          if (soundEnabledRef.current) {
-            startAlert(eventId);
-          }
-          
-          addPopup({
-            id: eventId,
-            type: "customization",
-            data: newReq
-          });
-
-          setRecentNotifications(prev => [
-            { id: eventId, type: "customization", title: newReq.title, customer: newReq.customer, time: new Date() },
-            ...prev
-          ].slice(0, 10));
-        }
-      )
-      .subscribe();
 
     // Inventory channel
     const inventoryChannel = supabase
@@ -243,12 +216,24 @@ function AdminPage() {
       )
       .subscribe();
 
+    // Profiles (Users) channel
+    const profilesChannel = supabase
+      .channel("public:profiles")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "profiles" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+        }
+      )
+      .subscribe();
+
     return () => {
       Array.from(activeAlerts.keys()).forEach(id => stopAlert(id));
       supabase.removeChannel(ordersChannel);
-      supabase.removeChannel(customizationsChannel);
       supabase.removeChannel(inventoryChannel);
       supabase.removeChannel(productsChannel);
+      supabase.removeChannel(profilesChannel);
     };
   }, [isAdmin, queryClient]);
 
@@ -262,20 +247,6 @@ function AdminPage() {
         .order("created_at", { ascending: false });
       if (error) throw error;
       data?.forEach(o => processedEvents.current.add(`order:${(o as any).id}`));
-      return (data as any[]) || [];
-    },
-  });
-
-  const customizationsQuery = useQuery({
-    queryKey: ["admin-customizations"],
-    enabled: isAdmin,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customization_requests")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      data?.forEach(c => processedEvents.current.add(`customization:${(c as any).id}`));
       return (data as any[]) || [];
     },
   });
@@ -379,7 +350,8 @@ function AdminPage() {
   const outOfStock = inventory.filter((i) => i.stock === 0).length;
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-[#FDFBF7] text-ink overflow-hidden font-sans">
+      {/* Notifications Popups (Preserved) */}
       {activePopups.length > 0 && (
         <div className="fixed top-[80px] right-4 md:right-8 z-[9999] flex flex-col gap-4 max-h-[80vh] overflow-y-auto pointer-events-none w-full max-w-[400px]">
           {activePopups.map((popup) => {
@@ -487,45 +459,87 @@ function AdminPage() {
           })}
         </div>
       )}
+
+      {/* Mobile Sidebar Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-ink/20 backdrop-blur-sm z-40 md:hidden animate-in fade-in duration-300"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-full md:w-64 bg-card border-r border-border/50 flex flex-col">
-        <div className="p-6 border-b border-border/50">
-          <Link to="/" className="font-display text-2xl tracking-wide">
-            AAROHAN <span className="text-accent text-sm">ADMIN</span>
+      <aside 
+        className={cn(
+          "fixed md:static inset-y-0 left-0 z-50 w-72 bg-[#F9F7F1] border-r border-[#E8E3D9] flex flex-col transition-transform duration-300 ease-soft",
+          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        )}
+      >
+        <div className="p-8 border-b border-[#E8E3D9] flex justify-between items-center">
+          <Link to="/" className="font-display text-2xl tracking-wider text-ink flex items-center gap-2">
+            AAROHAN <span className="text-clay text-[0.5em] tracking-widest uppercase font-sans font-medium mt-1">Admin</span>
           </Link>
+          <Button variant="ghost" size="icon" className="md:hidden text-ink" onClick={() => setIsMobileMenuOpen(false)}>
+            <X className="h-5 w-5" />
+          </Button>
         </div>
-        <div className="flex-1 p-4 flex flex-col gap-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 px-2">Navigation</p>
+
+        <div className="flex-1 px-4 py-8 flex flex-col gap-1 overflow-y-auto no-scrollbar">
+          <p className="eyebrow mb-4 px-4 text-[#8C857B]">Navigation</p>
           <Button 
             variant="ghost" 
             asChild
-            className={`justify-start ${location.pathname === '/admin/dashboard' || location.pathname === '/admin' ? 'text-foreground bg-accent/5' : 'text-muted-foreground hover:text-foreground'}`}
+            onClick={() => setIsMobileMenuOpen(false)}
+            className={cn(
+              "justify-start h-11 px-4 font-medium transition-all duration-300 rounded-lg",
+              location.pathname === '/admin/dashboard' || location.pathname === '/admin' 
+                ? 'bg-white text-ink shadow-sm border border-[#E8E3D9]' 
+                : 'text-[#6B655C] hover:text-ink hover:bg-white/50'
+            )}
           >
-            <Link to="/admin/dashboard"><Activity className="mr-3 h-4 w-4" /> Dashboard</Link>
+            <Link to="/admin/dashboard"><Activity className="mr-3 h-[18px] w-[18px] opacity-70" /> Dashboard</Link>
           </Button>
           <Button 
             variant="ghost" 
             asChild
-            className={`justify-start ${location.pathname.startsWith('/admin/products') ? 'text-foreground bg-accent/5' : 'text-muted-foreground hover:text-foreground'}`}
+            onClick={() => setIsMobileMenuOpen(false)}
+            className={cn(
+              "justify-start h-11 px-4 font-medium transition-all duration-300 rounded-lg",
+              location.pathname.startsWith('/admin/products') 
+                ? 'bg-white text-ink shadow-sm border border-[#E8E3D9]' 
+                : 'text-[#6B655C] hover:text-ink hover:bg-white/50'
+            )}
           >
-            <Link to="/admin/products"><Package className="mr-3 h-4 w-4" /> Products</Link>
+            <Link to="/admin/products"><Package className="mr-3 h-[18px] w-[18px] opacity-70" /> Products</Link>
           </Button>
           <Button 
             variant="ghost" 
             asChild
-            className={`justify-start ${location.pathname.startsWith('/admin/inventory') ? 'text-foreground bg-accent/5' : 'text-muted-foreground hover:text-foreground'}`}
+            onClick={() => setIsMobileMenuOpen(false)}
+            className={cn(
+              "justify-start h-11 px-4 font-medium transition-all duration-300 rounded-lg",
+              location.pathname.startsWith('/admin/inventory') 
+                ? 'bg-white text-ink shadow-sm border border-[#E8E3D9]' 
+                : 'text-[#6B655C] hover:text-ink hover:bg-white/50'
+            )}
           >
-            <Link to="/admin/inventory"><Box className="mr-3 h-4 w-4" /> Inventory</Link>
+            <Link to="/admin/inventory"><Box className="mr-3 h-[18px] w-[18px] opacity-70" /> Inventory</Link>
           </Button>
           <Button 
             variant="ghost" 
             asChild
-            className={`justify-start ${location.pathname.startsWith('/admin/orders') ? 'text-foreground bg-accent/5' : 'text-muted-foreground hover:text-foreground'}`}
+            onClick={() => setIsMobileMenuOpen(false)}
+            className={cn(
+              "justify-start h-11 px-4 font-medium transition-all duration-300 rounded-lg",
+              location.pathname.startsWith('/admin/orders') 
+                ? 'bg-white text-ink shadow-sm border border-[#E8E3D9]' 
+                : 'text-[#6B655C] hover:text-ink hover:bg-white/50'
+            )}
           >
             <Link to="/admin/orders" id="admin-orders-link">
-              <ShoppingCart className="mr-3 h-4 w-4" /> Orders
+              <ShoppingCart className="mr-3 h-[18px] w-[18px] opacity-70" /> Orders
               {pendingOrders > 0 && (
-                <span className="ml-auto bg-accent text-accent-foreground text-[10px] px-2 py-0.5 rounded-full">
+                <span className="ml-auto bg-clay text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
                   {pendingOrders}
                 </span>
               )}
@@ -534,106 +548,128 @@ function AdminPage() {
           <Button 
             variant="ghost" 
             asChild
-            className={`justify-start ${location.pathname.startsWith('/admin/users') ? 'text-foreground bg-accent/5' : 'text-muted-foreground hover:text-foreground'}`}
+            onClick={() => setIsMobileMenuOpen(false)}
+            className={cn(
+              "justify-start h-11 px-4 font-medium transition-all duration-300 rounded-lg",
+              location.pathname.startsWith('/admin/users') 
+                ? 'bg-white text-ink shadow-sm border border-[#E8E3D9]' 
+                : 'text-[#6B655C] hover:text-ink hover:bg-white/50'
+            )}
           >
-            <Link to="/admin/users"><Users className="mr-3 h-4 w-4" /> Users</Link>
+            <Link to="/admin/users"><Users className="mr-3 h-[18px] w-[18px] opacity-70" /> Users</Link>
           </Button>
+          
+          <div className="mt-8 mb-4">
+            <p className="eyebrow px-4 text-[#8C857B]">Configuration</p>
+          </div>
+          
           <Button 
             variant="ghost" 
             asChild
-            className={`justify-start ${location.pathname.startsWith('/admin/settings') ? 'text-foreground bg-accent/5' : 'text-muted-foreground hover:text-foreground'}`}
+            onClick={() => setIsMobileMenuOpen(false)}
+            className={cn(
+              "justify-start h-11 px-4 font-medium transition-all duration-300 rounded-lg",
+              location.pathname.startsWith('/admin/settings') 
+                ? 'bg-white text-ink shadow-sm border border-[#E8E3D9]' 
+                : 'text-[#6B655C] hover:text-ink hover:bg-white/50'
+            )}
           >
-            <Link to="/admin/settings"><SettingsIcon className="mr-3 h-4 w-4" /> Settings</Link>
+            <Link to="/admin/settings"><SettingsIcon className="mr-3 h-[18px] w-[18px] opacity-70" /> Settings</Link>
           </Button>
         </div>
-        <div className="p-4 border-t border-border/50 flex flex-col gap-2">
-          <Button variant="outline" className="justify-start w-full" asChild>
-            <Link to="/"><ShoppingCart className="mr-3 h-4 w-4" /> Back to Store</Link>
+        
+        <div className="p-6 border-t border-[#E8E3D9] flex flex-col gap-2 bg-[#F9F7F1]">
+          <Button variant="outline" className="justify-start w-full h-11 bg-white border-[#E8E3D9] hover:bg-[#F4F1EA]" asChild>
+            <Link to="/"><ShoppingCart className="mr-3 h-[18px] w-[18px] text-[#8C857B]" /> Back to Store</Link>
           </Button>
-          <Button variant="ghost" className="justify-start w-full text-red-600 hover:text-red-700 hover:bg-red-50" onClick={handleLogout}>
-            <LogOut className="mr-3 h-4 w-4" /> Logout
+          <Button variant="ghost" className="justify-start w-full h-11 text-red-700 hover:bg-red-50 hover:text-red-800" onClick={handleLogout}>
+            <LogOut className="mr-3 h-[18px] w-[18px]" /> Logout
           </Button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Top Header */}
-        <header className="h-16 border-b border-border/50 bg-card flex items-center justify-between px-6">
+        <header className="h-20 shrink-0 border-b border-[#E8E3D9] bg-[#FDFBF7] flex items-center justify-between px-6 z-30 sticky top-0">
           <div className="flex items-center gap-4 flex-1">
-            <h1 className="font-medium text-lg capitalize whitespace-nowrap hidden sm:block">
+            <Button variant="ghost" size="icon" className="md:hidden text-ink" onClick={() => setIsMobileMenuOpen(true)}>
+              <Menu className="h-5 w-5" />
+            </Button>
+            
+            <h1 className="font-display font-medium text-2xl tracking-wide capitalize whitespace-nowrap hidden sm:block">
               {location.pathname.split("/").pop() || "Dashboard"}
             </h1>
-            <div className="relative max-w-md w-full hidden md:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search products, orders..." className="pl-9 bg-secondary/20 border-border/50 h-9" />
+            <div className="relative max-w-md w-full hidden md:block ml-8">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-[#8C857B]" />
+              <Input 
+                placeholder="Search inventory, orders..." 
+                className="pl-11 bg-white border-[#E8E3D9] h-11 rounded-full shadow-sm text-[15px] focus-visible:ring-clay" 
+              />
             </div>
           </div>
           
-          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-            <Button variant={soundEnabled ? "default" : "outline"} size="sm" className="hidden lg:flex text-xs h-8" onClick={toggleSound}>
-              {soundEnabled ? "Disable Alerts" : "Enable Alerts"}
+          <div className="flex items-center gap-3 sm:gap-5 shrink-0">
+            <Button variant={soundEnabled ? "default" : "outline"} size="sm" className={cn("hidden lg:flex text-[13px] h-9 rounded-full", soundEnabled ? "bg-clay text-white" : "border-[#E8E3D9] bg-white")} onClick={toggleSound}>
+              {soundEnabled ? "Alerts On" : "Alerts Off"}
             </Button>
-            <Button variant="outline" size="sm" className="hidden lg:flex text-xs h-8" onClick={() => startAlert("test-sound")}>
+            <Button variant="outline" size="sm" className="hidden lg:flex text-[13px] h-9 rounded-full border-[#E8E3D9] bg-white" onClick={() => startAlert("test-sound")}>
               Test Sound
             </Button>
+            
+            <div className="h-8 w-px bg-[#E8E3D9] hidden lg:block mx-1" />
+            
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative h-8 w-8">
-                  <Bell className="h-4 w-4 text-muted-foreground" />
+                <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-full hover:bg-white border border-transparent hover:border-[#E8E3D9] transition-all">
+                  <Bell className="h-5 w-5 text-ink" />
                   {recentNotifications.length > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] text-accent-foreground font-bold">
-                      {recentNotifications.length}
-                    </span>
+                    <span className="absolute top-1.5 right-2 flex h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
                   )}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64">
-                <div className="flex items-center justify-between px-3 py-2 border-b border-border/50">
-                  <span className="text-xs font-semibold">Notifications</span>
-                  <Button variant="ghost" size="sm" className="h-5 text-[10px]" onClick={() => setRecentNotifications([])}>Clear</Button>
+              <DropdownMenuContent align="end" className="w-80 rounded-xl shadow-lift border-[#E8E3D9]">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-[#E8E3D9] bg-[#FDFBF7]">
+                  <span className="font-medium text-sm text-ink">Notifications</span>
+                  <Button variant="ghost" size="sm" className="h-6 text-[11px] text-[#8C857B] hover:text-ink" onClick={() => setRecentNotifications([])}>Clear all</Button>
                 </div>
                 {recentNotifications.length === 0 ? (
-                  <div className="py-4 text-center text-xs text-muted-foreground">No new notifications</div>
+                  <div className="py-8 text-center text-sm text-[#8C857B]">You're all caught up.</div>
                 ) : (
-                  recentNotifications.map(n => (
-                    n.type === "order" ? (
-                      <DropdownMenuItem key={n.id} className="flex flex-col items-start gap-1 p-3 cursor-pointer" onClick={() => navigate("/admin/orders")}>
-                        <span className="font-semibold text-xs text-blue-600">New Order #{n.order_number}</span>
-                        <span className="text-[10px] text-muted-foreground">{formatINR(n.total || 0)} • {n.time.toLocaleTimeString()}</span>
-                      </DropdownMenuItem>
-                    ) : (
-                      <DropdownMenuItem key={n.id} className="flex flex-col items-start gap-1 p-3 cursor-pointer">
-                        <span className="font-semibold text-xs text-purple-700">✨ Customization</span>
-                        <span className="text-[10px] text-muted-foreground">{n.title} by {n.customer} • {n.time.toLocaleTimeString()}</span>
-                      </DropdownMenuItem>
-                    )
-                  ))
+                  <div className="max-h-[300px] overflow-y-auto no-scrollbar py-1">
+                    {recentNotifications.map(n => (
+                      n.type === "order" ? (
+                        <DropdownMenuItem key={n.id} className="flex flex-col items-start gap-1 p-4 cursor-pointer focus:bg-[#FDFBF7]" onClick={() => navigate("/admin/orders")}>
+                          <span className="font-semibold text-[13px] text-ink">New Order #{n.order_number}</span>
+                          <span className="text-[12px] text-[#6B655C]">{formatINR(n.total || 0)} • {n.time.toLocaleTimeString()}</span>
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem key={n.id} className="flex flex-col items-start gap-1 p-4 cursor-pointer focus:bg-[#FDFBF7]">
+                          <span className="font-semibold text-[13px] text-clay flex items-center gap-1.5"><Sparkles className="h-3 w-3"/> Customization Request</span>
+                          <span className="text-[12px] text-[#6B655C]">{n.title} by {n.customer} • {n.time.toLocaleTimeString()}</span>
+                        </DropdownMenuItem>
+                      )
+                    ))}
+                  </div>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button variant="default" size="sm" className="hidden md:flex text-xs h-8" asChild>
-              <Link to="/" target="_blank">View Storefront</Link>
-            </Button>
             
-            <div className="h-6 w-px bg-border/50 hidden sm:block mx-1" />
+            <div className="h-8 w-px bg-[#E8E3D9] hidden sm:block mx-1" />
             
-            <div className="flex items-center gap-3">
-              <div className="text-right hidden sm:block">
-                <p className="text-xs font-semibold leading-none">Shop Owner</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5 truncate max-w-[120px]">{user?.email}</p>
-              </div>
-              <div className="h-8 w-8 rounded-full bg-accent/10 flex items-center justify-center text-accent font-medium text-xs">
+            <div className="flex items-center gap-3 group cursor-pointer hover:bg-white p-1 pr-3 rounded-full border border-transparent hover:border-[#E8E3D9] transition-all">
+              <div className="h-9 w-9 rounded-full bg-clay text-white flex items-center justify-center font-medium text-sm shadow-sm">
                 {user?.email?.charAt(0).toUpperCase() || 'A'}
               </div>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-600" onClick={handleLogout} title="Logout">
-                <LogOut className="h-4 w-4" />
-              </Button>
+              <div className="text-left hidden sm:block">
+                <p className="text-[13px] font-semibold leading-tight text-ink">Shop Owner</p>
+                <p className="text-[11px] text-[#8C857B] mt-0.5 truncate max-w-[120px]">{user?.email}</p>
+              </div>
             </div>
           </div>
         </header>
 
-        <div className="p-6 md:p-8 flex-1 overflow-auto">
+        <div className="flex-1 overflow-y-auto no-scrollbar p-4 sm:p-6 lg:p-8 bg-[#FDFBF7]">
           <Routes>
             <Route path="/" element={<Navigate to="dashboard" replace />} />
             
@@ -749,42 +785,12 @@ function AdminPage() {
             } />
 
             <Route path="users" element={
-              <div className="rounded-xl bg-card shadow-soft border border-border/50 overflow-hidden">
-                {usersQuery.isLoading ? (
-                  <div className="p-8 text-center text-sm text-muted-foreground">Loading users...</div>
-                ) : users.length === 0 ? (
-                  <div className="p-8 text-center text-sm text-muted-foreground">No users found.</div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
-                      <thead className="text-xs text-muted-foreground uppercase bg-secondary/30">
-                        <tr>
-                          <th className="px-6 py-4 font-medium">Name</th>
-                          <th className="px-6 py-4 font-medium">Email</th>
-                          <th className="px-6 py-4 font-medium">Role</th>
-                          <th className="px-6 py-4 font-medium">Joined</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border/50">
-                        {users.map((u) => (
-                          <tr key={u.id} className="hover:bg-accent/5 transition-colors">
-                            <td className="px-6 py-4 font-medium">{u.full_name || "—"}</td>
-                            <td className="px-6 py-4 text-muted-foreground">{u.email}</td>
-                            <td className="px-6 py-4">
-                              <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-semibold ${u.role === 'admin' ? 'bg-accent text-accent-foreground' : 'bg-secondary text-secondary-foreground'}`}>
-                                {u.role}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 text-xs text-muted-foreground">
-                              {new Date(u.created_at).toLocaleDateString()}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
+              <UserManager
+                users={users}
+                isLoading={usersQuery.isLoading}
+                isError={usersQuery.isError}
+                onRefresh={() => queryClient.invalidateQueries({ queryKey: ["admin-users"] })}
+              />
             } />
             <Route path="settings" element={
               <div className="p-8 text-center bg-card rounded-xl border border-border/50">

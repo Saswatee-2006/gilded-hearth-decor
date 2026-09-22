@@ -21,6 +21,7 @@ import ProductPage from "./routes/product.$slug";
 import CartPage from "./routes/cart";
 import CheckoutPage from "./routes/checkout";
 import AuthPage from "./routes/auth";
+import ResetPasswordPage from "./routes/reset-password";
 import WishlistPage from "./routes/wishlist";
 import AccountPage from "./routes/_authenticated/account";
 import OrderDetailPage from "./routes/_authenticated/order.$id";
@@ -152,6 +153,7 @@ export function App() {
                   <Route path="cart" element={<CartPage />} />
                   <Route path="checkout" element={<CheckoutPage />} />
                   <Route path="auth" element={<AuthPage />} />
+                  <Route path="reset-password" element={<ResetPasswordPage />} />
                   <Route path="wishlist" element={<WishlistPage />} />
 
                   {/* Authenticated Routes - we will handle auth guards in components */}

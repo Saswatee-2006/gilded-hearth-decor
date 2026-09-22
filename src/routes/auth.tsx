@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 
-type AuthMode = "signin" | "signup" | "forgot" | "legacy-email";
+type AuthMode = "signin" | "signup" | "forgot";
 
 function AuthPage() {
   const navigate = useNavigate();
@@ -20,7 +20,7 @@ function AuthPage() {
   const [mode, setMode] = useState<AuthMode>("signin");
   const [busy, setBusy] = useState(false);
 
-  const [form, setForm] = useState({ name: "", email: "", password: "", phone: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [showSuccess, setShowSuccess] = useState(false);
 
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -75,25 +75,12 @@ function AuthPage() {
     );
   }
 
-  function normalizeIndianPhone(raw: string): string {
-    let digits = raw.replace(/\D/g, "");
-    if (digits.startsWith("91") && digits.length > 10) {
-      digits = digits.substring(2);
-    } else if (digits.startsWith("0") && digits.length > 10) {
-      digits = digits.substring(1);
-    }
-    if (digits.length !== 10) {
-      throw new Error("Invalid phone number. Please enter a valid 10-digit Indian mobile number.");
-    }
-    return `+91${digits}`;
-  }
-
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setIsLoggingIn(true);
     try {
-      if (mode === "legacy-email") {
+      if (mode === "signin") {
         if (!form.email || !form.password) {
           throw new Error("Email and password are required.");
         }
@@ -103,30 +90,15 @@ function AuthPage() {
         });
         if (error) throw error;
         toast.success("Welcome back");
-      } else if (mode === "signin") {
-        if (!form.phone || !form.password) {
-          throw new Error("Mobile number and password are required.");
-        }
-        const normalizedPhone = normalizeIndianPhone(form.phone);
-        const { error } = await supabase.auth.signInWithPassword({
-          phone: normalizedPhone,
-          password: form.password,
-        });
-        if (error) throw error;
-        toast.success("Welcome back");
       } else if (mode === "signup") {
-        if (!form.phone || !form.password || !form.name) {
-          throw new Error("Name, mobile number, and password are required for signup.");
+        if (!form.email || !form.password || !form.name) {
+          throw new Error("Name, email, and password are required for signup.");
         }
-        const normalizedPhone = normalizeIndianPhone(form.phone);
         const { data, error } = await supabase.auth.signUp({
-          phone: normalizedPhone,
+          email: form.email.trim(),
           password: form.password,
           options: {
-            data: {
-              full_name: form.name.trim(),
-              email: form.email ? form.email.trim() : undefined,
-            }
+            data: { full_name: form.name.trim() }
           }
         });
         if (error) throw error;
@@ -134,14 +106,34 @@ function AuthPage() {
         toast.success("Account created successfully!");
       }
     } catch (err) {
-      if (err instanceof Error && err.message.includes("Phone logins are disabled")) {
-        toast.error("Phone Provider is disabled in Supabase. Please enable it in Authentication > Providers.");
+      if (err instanceof Error) {
+        if (err.message.includes("Invalid login credentials")) {
+          toast.error("Invalid email or password. If you forgot your password, use Forgot Password.");
+        } else if (err.message.includes("User already registered")) {
+          toast.error("This email is already registered. Please sign in instead.");
+        } else {
+          toast.error(err.message);
+        }
       } else {
-        toast.error(err instanceof Error ? err.message : "Something went wrong");
+        toast.error("Something went wrong");
       }
     } finally {
       setBusy(false);
       setIsLoggingIn(false);
+    }
+  }
+
+  async function handleGoogleLogin() {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}${search["returnTo"] ? `?returnTo=${search["returnTo"]}` : ''}`
+        }
+      });
+      if (error) throw error;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Google login failed");
     }
   }
 
@@ -153,7 +145,9 @@ function AuthPage() {
     }
     setBusy(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(form.email.trim());
+      const { error } = await supabase.auth.resetPasswordForEmail(form.email.trim(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
       if (error) throw error;
       toast.success("Password reset link sent to your email");
     } catch (err) {
@@ -170,7 +164,7 @@ function AuthPage() {
           WELCOME BACK
         </p>
         <h1 className="mt-2 font-display text-3xl">
-          {mode === "signin" || mode === "legacy-email"
+          {mode === "signin"
             ? "Sign In"
             : mode === "signup"
               ? "Create your account"
@@ -186,11 +180,11 @@ function AuthPage() {
         {mode === "signup" && (
           <form onSubmit={submit} className="space-y-4">
             <div>
-              <Label htmlFor="name_mobile" className="text-xs">
+              <Label htmlFor="name" className="text-xs">
                 Full Name <span className="text-red-500">*</span>
               </Label>
               <Input
-                id="name_mobile"
+                id="name"
                 value={form.name}
                 maxLength={80}
                 required
@@ -199,32 +193,15 @@ function AuthPage() {
               />
             </div>
             <div>
-              <Label htmlFor="phone" className="text-xs">
-                Mobile Number <span className="text-red-500">*</span>
-              </Label>
-              <div className="relative mt-1.5">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">+91</span>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={form.phone}
-                  required
-                  maxLength={15}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="pl-10"
-                  placeholder="9999999999"
-                />
-              </div>
-            </div>
-            <div>
               <Label htmlFor="email" className="text-xs">
-                Email Address (Optional)
+                Email Address <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="email"
                 type="email"
                 value={form.email}
                 maxLength={255}
+                required
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 className="mt-1.5"
               />
@@ -251,121 +228,93 @@ function AuthPage() {
           </form>
         )}
 
-        {/* Login Form (Phone) */}
+        {/* Login Form (Email + Google) */}
         {mode === "signin" && (
-          <form onSubmit={submit} className="space-y-4">
-            <div>
-              <Label htmlFor="phone" className="text-xs">
-                Mobile Number
-              </Label>
-              <div className="relative mt-1.5">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">+91</span>
+          <div className="space-y-6">
+            <form onSubmit={submit} className="space-y-4">
+              <div>
+                <Label htmlFor="email" className="text-xs">
+                  Email
+                </Label>
                 <Input
-                  id="phone"
-                  type="tel"
-                  value={form.phone}
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  value={form.email}
+                  maxLength={255}
                   required
-                  maxLength={10}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, '') })}
-                  className="pl-10"
-                  placeholder="9999999999"
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className="mt-1.5"
                 />
               </div>
-            </div>
-            <div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-xs">
-                  Password
-                </Label>
-                <button
-                  type="button"
-                  onClick={() => setMode("forgot")}
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Forgot Password?
-                </button>
+              <div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password" className="text-xs">
+                    Password
+                  </Label>
+                  <button
+                    type="button"
+                    onClick={() => setMode("forgot")}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={form.password}
+                  minLength={6}
+                  maxLength={72}
+                  required
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  className="mt-1.5"
+                />
               </div>
-              <Input
-                id="password"
-                type="password"
-                value={form.password}
-                required
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                className="mt-1.5"
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={busy}>
-              Sign In
-            </Button>
-            
-            <div className="mt-4 text-center">
-              <button
-                type="button"
-                onClick={() => setMode("legacy-email")}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Use email instead
-              </button>
-            </div>
-          </form>
-        )}
+              
+              <Button type="submit" className="w-full" disabled={busy}>
+                Sign In
+              </Button>
+            </form>
 
-        {/* Legacy Email Form */}
-        {mode === "legacy-email" && (
-          <form onSubmit={submit} className="space-y-4">
-            <div>
-              <Label htmlFor="email" className="text-xs">
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                value={form.email}
-                maxLength={255}
-                required
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="mt-1.5"
-              />
-            </div>
-            <div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-xs">
-                  Password
-                </Label>
-                <button
-                  type="button"
-                  onClick={() => setMode("forgot")}
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Forgot Password?
-                </button>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-muted" />
               </div>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                value={form.password}
-                minLength={6}
-                maxLength={72}
-                required
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                className="mt-1.5"
-              />
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">OR</span>
+              </div>
             </div>
-            <div className="flex items-center space-x-2 py-1">
-              <Checkbox id="remember_email" />
-              <label
-                htmlFor="remember_email"
-                className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Remember me
-              </label>
-            </div>
-            <Button type="submit" className="w-full" disabled={busy}>
-              Sign In
+
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="w-full" 
+              onClick={handleGoogleLogin} 
+              disabled={busy}
+            >
+              <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+                <path
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  fill="#4285F4"
+                />
+                <path
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  fill="#34A853"
+                />
+                <path
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  fill="#FBBC05"
+                />
+                <path
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  fill="#EA4335"
+                />
+              </svg>
+              Continue with Google
             </Button>
-          </form>
+          </div>
         )}
 
         {/* Forgot Password */}
@@ -402,7 +351,7 @@ function AuthPage() {
         )}
 
         {/* Navigation / Switchers */}
-        {(mode === "signin" || mode === "legacy-email") && (
+        {(mode === "signin") && (
           <div className="mt-8 flex flex-col space-y-4 text-center text-sm text-muted-foreground">
             <p>
               New to Aarohan?{" "}
