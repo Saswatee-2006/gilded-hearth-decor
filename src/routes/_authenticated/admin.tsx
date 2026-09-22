@@ -42,6 +42,7 @@ import { InventoryManager } from "@/components/admin/InventoryManager";
 import { ProductManager } from "@/components/admin/ProductManager";
 import { DashboardOverview } from "@/components/admin/DashboardOverview";
 import { UserManager } from "@/components/admin/UserManager";
+import { OrderModal } from "@/components/admin/OrderModal";
 import { Input } from "@/components/ui/input";
 
 const STATUSES = ["placed", "processing", "shipped", "delivered", "cancelled"] as const;
@@ -129,30 +130,28 @@ const playAcceptSound = async () => {
   }
 };
 
-const activeAlerts = new Map<string, number>();
+const activeAlerts = new Set<string>();
+let globalAlertInterval: number | null = null;
 
 const stopAlert = (id: string) => {
-  if (activeAlerts.has(id)) {
-    window.clearInterval(activeAlerts.get(id)!);
-    activeAlerts.delete(id);
-    console.log(`[ORDER REALTIME] Sound stopped for: ${id}`);
+  activeAlerts.delete(id);
+  if (activeAlerts.size === 0 && globalAlertInterval) {
+    window.clearInterval(globalAlertInterval);
+    globalAlertInterval = null;
+    console.log(`[ORDER REALTIME] Sound stopped.`);
   }
 };
 
 const startAlert = (id: string) => {
-  if (activeAlerts.has(id)) return;
-  
+  activeAlerts.add(id);
+  if (globalAlertInterval) {
+    window.clearInterval(globalAlertInterval);
+  }
   playNotificationSound();
-  const intervalId = window.setInterval(() => {
+  globalAlertInterval = window.setInterval(() => {
     playNotificationSound();
-  }, 1200);
-  
-  activeAlerts.set(id, intervalId);
+  }, 2500);
   console.log(`[ORDER REALTIME] Sound started looping for: ${id}`);
-  
-  setTimeout(() => {
-    stopAlert(id);
-  }, 6000);
 };
 
 function AdminPage() {
@@ -168,6 +167,7 @@ function AdminPage() {
   const soundEnabledRef = useRef(soundEnabled);
   const [recentNotifications, setRecentNotifications] = useState<any[]>([]);
   const [activePopups, setActivePopups] = useState<any[]>([]);
+  const [viewOrderId, setViewOrderId] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const addPopup = (popup: any) => setActivePopups(prev => [...prev, popup]);
@@ -435,8 +435,7 @@ function AdminPage() {
                       onClick={() => {
                         stopAlert(popup.id);
                         removePopup(popup.id);
-                        window.location.hash = "";
-                        document.getElementById("admin-orders-link")?.click();
+                        setViewOrderId(newOrder.id);
                       }}
                     >
                       View Order
@@ -866,6 +865,21 @@ function AdminPage() {
         onOpenChange={setProductFormOpen} 
         productToEdit={productToEdit}
       />
+      
+      {/* Full Order Details Modal */}
+      {viewOrderId && (
+        <OrderModal 
+          orderId={viewOrderId} 
+          onClose={() => setViewOrderId(null)}
+          onAccept={(id) => {
+            stopAlert('order:' + id);
+            playAcceptSound();
+            setStatus.mutate({ id, status: 'processing' });
+            setViewOrderId(null);
+            removePopup('order:' + id);
+          }}
+        />
+      )}
     </div>
   );
 }
